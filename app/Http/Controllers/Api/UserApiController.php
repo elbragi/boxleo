@@ -264,7 +264,7 @@ class UserApiController extends Controller
       'office_id' => 'required',
       'department_id' => 'required',
       'designation_id' => 'required',
-      'role' => 'required',
+      'role' => 'nullable',
       'gender' => 'required|string|in:Male,Female',
       'avatar' => 'nullable|file|image|mimes:jpg,jpeg,png,gif',
       'zk_user_id' => 'nullable|string|max:255',
@@ -308,12 +308,15 @@ class UserApiController extends Controller
 
     $user->user_detail()->create();
 
-    if ($request->has('role')) {
-      $user->assignRole($request->role);
+    // Default to 'employee' role if not provided
+    $roleName = $request->input('role', 'employee');
+    
+    if ($roleName) {
+      $user->assignRole($roleName);
 
       $permissions = [];
 
-      switch ($request->role) {
+      switch ($roleName) {
         case 'admin':
           $permissions = [
             'view_admin_panel',
@@ -329,7 +332,7 @@ class UserApiController extends Controller
             'view_employee_panel',
           ];
 
-          if ($request->role == 'employee' && $request->designation_id == 1) {
+          if ($roleName == 'employee' && $request->designation_id == 1) {
             array_push($permissions, 'view_team_leaves');
           }
           break;
