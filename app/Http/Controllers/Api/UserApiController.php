@@ -525,7 +525,7 @@ public function update(Request $request, User $user)
     'office_id' => 'required|exists:offices,id',
     'department_id' => 'required|exists:departments,id',
     'designation_id' => 'required|exists:designations,id',
-    'role' => 'required|string|in:admin,employee',
+    'role' => 'nullable|string|in:admin,employee',
     'gender' => 'required|string|in:Male,Female',
     'zk_user_id' => 'nullable|string|max:255',
     'zk_username' => 'nullable|string|max:255',
