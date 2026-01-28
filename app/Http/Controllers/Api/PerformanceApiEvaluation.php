@@ -157,8 +157,8 @@ class PerformanceApiEvaluation extends Controller
         $evaluations = collect();
 
         switch (true) {
-            case $user->is_hr:
-                Log::info('Role: HR');
+            case $user->is_hr || $user->hasRole('admin') || $user->super_admin:
+                Log::info('Role: HR/Admin');
                 $evaluations = PerformanceEvaluation::with(['user.unit', 'user.department', 'evaluator'])->get();
                 break;
 
@@ -220,7 +220,70 @@ class PerformanceApiEvaluation extends Controller
     }
 
     /**
-     * Calculate attendance percentage
+     * Calculate attendance metrics for individuals or groups
+     */
+    public function attendanceMetrics(Request $request)
+    {
+        $year = $request->year ?? now()->year;
+        $month = $request->month ?? now()->month;
+
+        $startOfMonth = Carbon::createFromDate($year, $month)->startOfMonth();
+        $endOfMonth = Carbon::createFromDate($year, $month)->endOfMonth();
+
+        // Calculate working days in the month (weekdays)
+        $workingDays = CarbonPeriod::create($startOfMonth, $endOfMonth)
+            ->filter(function (Carbon $date) {
+                return $date->isWeekday();
+            })
+            ->count();
+
+        $query = User::whereNull('deleted_at');
+
+        if ($request->has('user_id') && $request->user_id) {
+            $query->where('id', $request->user_id);
+        }
+        if ($request->has('unit_id') && $request->unit_id) {
+            $query->whereIn('unit_id', (array) $request->unit_id);
+        }
+        if ($request->has('department_id') && $request->department_id) {
+            $query->whereIn('department_id', (array) $request->department_id);
+        }
+
+        $userIds = $query->pluck('id');
+
+        if ($userIds->isEmpty()) {
+            return response()->json([
+                'attendance_percentage' => 0,
+                'total_present_days' => 0,
+                'total_possible_days' => 0,
+                'employee_count' => 0
+            ]);
+        }
+
+        $totalPresentDays = Attendance::whereIn('user_id', $userIds)
+            ->whereBetween('attendance_date', [$startOfMonth, $endOfMonth])
+            ->where('is_present', 1)
+            ->count();
+
+        $totalPossibleDays = $userIds->count() * $workingDays;
+
+        $attendancePercentage = $totalPossibleDays > 0
+            ? round(($totalPresentDays / $totalPossibleDays) * 100, 2)
+            : 0;
+
+        return response()->json([
+            'year' => $year,
+            'month' => $month,
+            'working_days' => $workingDays,
+            'employee_count' => $userIds->count(),
+            'total_present_days' => $totalPresentDays,
+            'total_possible_days' => $totalPossibleDays,
+            'attendance_percentage' => $attendancePercentage,
+        ]);
+    }
+
+    /**
+     * Calculate attendance percentage (internal)
      */
     public function attendance($userId, $year, $month)
     {

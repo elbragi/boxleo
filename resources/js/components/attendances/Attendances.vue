@@ -92,13 +92,24 @@
               </v-row>
             </v-card>
           </v-col>
-          <v-col cols="12" sm="3">
+          <v-col cols="12" sm="2">
             <v-card class="pa-4" variant="flat">
               <v-row align="center">
                 <v-icon color="orange lighten-1" size="48">mdi-account-multiple-outline</v-icon>
                 <v-col>
                   <div class="text-h6">{{ averagePresencePercentage }}%</div>
-                  <div class="subtitle-2">Average Presence(Today)</div>
+                  <div class="subtitle-2">Presence(Today)</div>
+                </v-col>
+              </v-row>
+            </v-card>
+          </v-col>
+          <v-col cols="12" sm="4">
+            <v-card class="pa-4" variant="flat">
+              <v-row align="center">
+                <v-icon color="green lighten-1" size="48">mdi-calendar-check</v-icon>
+                <v-col>
+                  <div class="text-h6">{{ monthlyAttendanceRating }}%</div>
+                  <div class="subtitle-2">Monthly Attendance Rating</div>
                 </v-col>
               </v-row>
             </v-card>
@@ -326,6 +337,7 @@ export default {
       ],
 
       averagePresencePercentage: '0.00',
+      monthlyAttendanceRating: '0.00',
       averageClockInTime: '00:00',
       averageClockOutTime: '00:00',
       averageWorkingHours: 9.45,
@@ -388,7 +400,8 @@ export default {
   async created() {
     await this.fetchAttendances();
     await this.fetchEmployees();
-    this.fetchUnits()
+    this.fetchUnits();
+    await this.fetchAttendanceMetrics();
   },
 
   methods: {
@@ -434,6 +447,19 @@ export default {
       }
     },
 
+    async fetchAttendanceMetrics() {
+      try {
+        const params = {
+          unit_id: this.filters.country_id,
+          user_id: this.filters.user_id,
+        };
+        const response = await axios.get('/api/v1/performance-evaluations/attendance-metrics', { params });
+        this.monthlyAttendanceRating = response.data.attendance_percentage;
+      } catch (error) {
+        console.error('Error fetching attendance metrics:', error);
+      }
+    },
+
     async fetchAttendances() {
       this.loading = true;
       const apiUrl = this.base_url + 'api/v1/attendances';
@@ -455,6 +481,8 @@ export default {
         this.averageClockInTime = data.average_clock_in_time;
         this.averageClockOutTime = data.average_clock_out_time;
         // this.averageWorkingHours = data.average_working_hours;
+
+        await this.fetchAttendanceMetrics();
 
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -497,6 +525,7 @@ export default {
             }
           }));
 
+          this.fetchAttendanceMetrics();
           this.loading = false;
         })
         .catch(error => {

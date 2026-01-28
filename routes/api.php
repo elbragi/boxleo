@@ -280,6 +280,7 @@ Route::put('v1/performance-evaluations/{id}', [PerformanceApiEvaluation::class, 
 Route::delete('v1/performance-evaluations/{id}', [PerformanceApiEvaluation::class, 'destroy']);
 Route::get('v1/performance-evaluations/filter', [PerformanceApiEvaluation::class, 'filterEvaluations']);
 Route::get('v1/performance-evaluations/filter-options', [PerformanceApiEvaluation::class, 'getFilterOptions']);
+Route::get('v1/performance-evaluations/attendance-metrics', [PerformanceApiEvaluation::class, 'attendanceMetrics']);
 
 
 // Performance report routes
