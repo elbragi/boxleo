@@ -62,9 +62,18 @@ def main():
                 elif password_sent and not patches_sent and ("master" in log or "$" in log):
                     time.sleep(2)
                     
+                    # 0. Sync with GitHub first
+                    print("\n[AI] Pulling latest code from GitHub...")
+                    os.write(fd, b"cd applications/zwpneuuzgz/public_html && git pull origin main\n")
+                    time.sleep(10) # Wait for pull
+                    
                     # 1. Performance Controller (Backend Logic)
                     patch_file(fd, '/home/el/work/boxleo/app/Http/Controllers/Api/PerformanceApiEvaluation.php', 
                                'applications/zwpneuuzgz/public_html/app/Http/Controllers/Api/PerformanceApiEvaluation.php')
+                               
+                    # 1b. Attendance Controller (Individual Ratings)
+                    patch_file(fd, '/home/el/work/boxleo/app/Http/Controllers/Api/AttendanceApiController.php', 
+                               'applications/zwpneuuzgz/public_html/app/Http/Controllers/Api/AttendanceApiController.php')
                     
                     # 2. Performance Page (Revert to original)
                     patch_file(fd, '/home/el/work/boxleo/resources/js/components/performance/PerformanceEvaluation.vue', 
@@ -81,7 +90,7 @@ def main():
                     print("\n[AI] All patches sent. Starting remote build...")
                     
                     # Trigger build
-                    os.write(fd, b"cd applications/zwpneuuzgz/public_html && npm run build\n")
+                    os.write(fd, b"npm run build\n")
                     
                     time.sleep(40) # Wait for build to reasonably progress
                     os.write(fd, b"exit\n")
