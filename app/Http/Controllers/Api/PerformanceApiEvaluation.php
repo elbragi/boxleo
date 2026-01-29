@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use App\Models\Department;
+use App\Models\Leave;
 use App\Models\PerformanceEvaluation;
 use App\Models\Unit;
 use App\Models\User;
@@ -230,12 +231,20 @@ class PerformanceApiEvaluation extends Controller
         $startOfMonth = Carbon::createFromDate($year, $month)->startOfMonth();
         $endOfMonth = Carbon::createFromDate($year, $month)->endOfMonth();
 
-        // Calculate working days in the month (weekdays)
+        // Calculate working days in the month (Mon-Sat)
         $workingDays = CarbonPeriod::create($startOfMonth, $endOfMonth)
             ->filter(function (Carbon $date) {
-                return $date->isWeekday();
+                return !$date->isSunday();
             })
             ->count();
+
+        // Calculate MTD working days (Mon-Sat passed so far this month)
+        $today = now()->startOfDay();
+        $isCurrentMonth = ($startOfMonth->month == $today->month && $startOfMonth->year == $today->year);
+        
+        $denominatorDays = ($isCurrentMonth) 
+            ? CarbonPeriod::create($startOfMonth, min($today, $endOfMonth))->filter(fn($date) => !$date->isSunday())->count()
+            : $workingDays;
 
         $query = User::whereNull('deleted_at');
 
@@ -254,10 +263,42 @@ class PerformanceApiEvaluation extends Controller
         if ($userIds->isEmpty()) {
             return response()->json([
                 'attendance_percentage' => 0,
-                'total_present_days' => 0,
+                'total_in_time_days' => 0,
                 'total_possible_days' => 0,
                 'employee_count' => 0
             ]);
+        }
+
+        // Fetch Approved Leaves for the group in the valid period
+        $leaves = Leave::whereIn('user_id', $userIds)
+            ->where('status', 'Approved')
+            ->where(function ($q) use ($startOfMonth, $endOfMonth) {
+                $q->whereBetween('from', [$startOfMonth, $endOfMonth])
+                  ->orWhereBetween('to', [$startOfMonth, $endOfMonth])
+                  ->orWhere(function ($sub) use ($startOfMonth, $endOfMonth) {
+                      $sub->where('from', '<', $startOfMonth)
+                          ->where('to', '>', $endOfMonth);
+                  });
+            })
+            ->get();
+
+        $totalLeaveDays = 0;
+        foreach ($leaves as $leave) {
+            $leaveStart = Carbon::parse($leave->from)->max($startOfMonth);
+            $today = now()->startOfDay();
+            // If current month, cap leave credit at today (MTD logic). 
+            // If viewing past month, cap at endOfMonth.
+            $effectiveEnd = ($startOfMonth->month == $today->month && $startOfMonth->year == $today->year) ? min($today, $endOfMonth) : $endOfMonth;
+            
+            $leaveEnd = Carbon::parse($leave->to)->min($effectiveEnd);
+
+            if ($leaveStart->gt($leaveEnd)) continue;
+
+            $days = \Carbon\CarbonPeriod::create($leaveStart, $leaveEnd)
+                ->filter(fn($date) => !$date->isSunday())
+                ->count();
+            
+            $totalLeaveDays += $days;
         }
 
         $totalPresentDays = Attendance::whereIn('user_id', $userIds)
@@ -265,10 +306,12 @@ class PerformanceApiEvaluation extends Controller
             ->where('is_present', 1)
             ->count();
 
-        $totalPossibleDays = $userIds->count() * $workingDays;
+        $totalPossibleDays = $userIds->count() * $denominatorDays;
+        
+        $totalCreditedDays = $totalPresentDays + $totalLeaveDays;
 
         $attendancePercentage = $totalPossibleDays > 0
-            ? round(($totalPresentDays / $totalPossibleDays) * 100, 2)
+            ? min(round(($totalCreditedDays / $totalPossibleDays) * 100, 2), 100)
             : 0;
 
         return response()->json([
@@ -277,6 +320,7 @@ class PerformanceApiEvaluation extends Controller
             'working_days' => $workingDays,
             'employee_count' => $userIds->count(),
             'total_present_days' => $totalPresentDays,
+            'total_leave_credits' => $totalLeaveDays,
             'total_possible_days' => $totalPossibleDays,
             'attendance_percentage' => $attendancePercentage,
         ]);

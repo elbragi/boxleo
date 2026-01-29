@@ -171,6 +171,18 @@
 
               </template>
 
+              <template v-slot:item.user.monthly_rating="{ item }">
+                <v-chip :color="item.user.monthly_rating > 80 ? 'blue' : (item.user.monthly_rating >= 66 ? 'green' : (item.user.monthly_rating >= 50 ? 'orange-darken-3' : 'red'))" size="small" dark>
+                  {{ item.user.monthly_rating }}%
+                </v-chip>
+              </template>
+
+              <template v-slot:item.user.monthly_late_days="{ item }">
+                <v-chip :color="item.user.monthly_late_days >= 7 ? 'red' : (item.user.monthly_late_days >= 4 ? 'orange' : 'green')" variant="outlined" size="small">
+                  {{ item.user.monthly_late_days }} Days
+                </v-chip>
+              </template>
+
               <template v-slot:item.actions="{ item }">
 
                 <v-tooltip bottom>
@@ -333,6 +345,8 @@ export default {
         { title: 'Time in ', key: 'clock_in_time' },
         { title: 'Status', key: 'status' },
         { title: 'Time Out ', key: 'clock_out_time' },
+        { title: 'Presence Rating', key: 'user.monthly_rating' },
+        { title: 'Late Days', key: 'user.monthly_late_days' },
         { title: 'Action', key: 'actions' },
       ],
 

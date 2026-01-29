@@ -33,6 +33,76 @@ class AttendanceApiController extends Controller
 
         $attendances = $query->take(2000)->get();
 
+        // Optimized Monthly Rating Calculation
+        $now = now();
+        $startOfMonth = $now->copy()->startOfMonth();
+        $endOfMonth = $now->copy()->endOfMonth();
+        $today = $now->copy()->startOfDay();
+        
+        // Count working days (Mon-Sat) from start of month up to today (MTD)
+        $workingDaysMTD = \Carbon\CarbonPeriod::create($startOfMonth, min($today, $endOfMonth))
+            ->filter(fn($date) => !$date->isSunday())
+            ->count();
+
+        $userIds = $attendances->pluck('user_id')->unique();
+        
+        $attendanceStatsUser = Attendance::whereIn('user_id', $userIds)
+            ->whereBetween('attendance_date', [$startOfMonth, $endOfMonth])
+            ->select('user_id', 
+                \Illuminate\Support\Facades\DB::raw('count(case when is_present = 1 then 1 end) as present_days'),
+                \Illuminate\Support\Facades\DB::raw('count(case when status = "Late" then 1 end) as late_days')
+            )
+            ->groupBy('user_id')
+            ->get()
+            ->keyBy('user_id');
+
+        // Fetch Approved Leaves overlapping with the current month (up to MTD)
+        $leaves = Leave::whereIn('user_id', $userIds)
+            ->where('status', 'Approved')
+            ->where(function ($q) use ($startOfMonth, $today) {
+                $q->whereBetween('from', [$startOfMonth, $today])
+                  ->orWhereBetween('to', [$startOfMonth, $today])
+                  ->orWhere(function ($sub) use ($startOfMonth, $today) {
+                      $sub->where('from', '<', $startOfMonth)
+                          ->where('to', '>', $today);
+                  });
+            })
+            ->get();
+
+        $userLeaveDays = [];
+        foreach ($leaves as $leave) {
+            // Calculate intersection of leave period and current MTD period
+            $leaveStart = Carbon::parse($leave->from)->max($startOfMonth);
+            $leaveEnd = Carbon::parse($leave->to)->min($today); // Don't count future leave days yet for MTD rating
+
+            if ($leaveStart->gt($leaveEnd)) continue;
+
+            $leaveWorkingDays = \Carbon\CarbonPeriod::create($leaveStart, $leaveEnd)
+                ->filter(fn($date) => !$date->isSunday()) // Match the working days definition
+                ->count();
+
+            if (!isset($userLeaveDays[$leave->user_id])) {
+                $userLeaveDays[$leave->user_id] = 0;
+            }
+            $userLeaveDays[$leave->user_id] += $leaveWorkingDays;
+        }
+
+        foreach ($attendances as $attendance) {
+            $stats = $attendanceStatsUser->get($attendance->user_id);
+            $presentDays = $stats ? $stats->present_days : 0;
+            $lateDays = $stats ? $stats->late_days : 0;
+            $exemptedDays = $userLeaveDays[$attendance->user_id] ?? 0;
+            
+            // Formula: (Present + Exempted) / Working Days MTD
+            // Cap at 100% just in case of overlap quirks (e.g. clocking in on a leave day)
+            $totalCreditedDays = $presentDays + $exemptedDays;
+            
+            $rating = $workingDaysMTD > 0 ? min(round(($totalCreditedDays / $workingDaysMTD) * 100, 2), 100) : 0;
+            
+            $attendance->user->setAttribute('monthly_rating', $rating);
+            $attendance->user->setAttribute('monthly_late_days', $lateDays);
+        }
+
         $totalEmployees = User::whereNull('deleted_at')
             ->where('super_admin', 0)
             ->where('unit_id', $unit_id)
