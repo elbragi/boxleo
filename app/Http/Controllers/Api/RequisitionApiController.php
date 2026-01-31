@@ -265,6 +265,37 @@ class RequisitionApiController extends Controller
                 'request_data' => $validated,
             ]);
 
+            // Guard: Prevent any updates to Paid requisitions
+            if ($requisition->status === 'Paid') {
+                return response()->json([
+                    'error' => 'Paid requisitions cannot be edited.'
+                ], 403);
+            }
+
+            // Guard: Prevent editing structural content of Approved requisitions
+            // Allow only status/payment updates (paid, pop, comment, etc.)
+            // Exception: Finance Manager can edit approved requisitions
+            $currentUser = auth()->user();
+            $isFinanceManager = $currentUser && $currentUser->is_finance_manager;
+
+            if (in_array($requisition->status, ['Approved', 'Manager Approved', 'HR Approved', 'Finance Manager Approved', 'COO Approved', 'CFO Approved'])) {
+                // If the user tries to update items, instructions, or approver type, block it.
+                // The 'Mark as Paid' action only sends 'paid', so it will pass.
+                // The 'Update Status' action only sends 'status', so it will pass.
+                // Finance Manager is allowed to edit.
+                if (
+                    !$isFinanceManager && (
+                        array_key_exists('items', $validated) || 
+                        array_key_exists('special_instructions', $validated) || 
+                        array_key_exists('approver_type', $validated)
+                    )
+                ) {
+                    return response()->json([
+                        'error' => 'Only Finance Manager can edit approved requisitions.'
+                    ], 403);
+                }
+            }
+
             // Update requisition details
             $requisition->special_instructions = $validated['special_instructions'] ?? $requisition->special_instructions;
             $requisition->status = $validated['status'] ?? $requisition->status;
