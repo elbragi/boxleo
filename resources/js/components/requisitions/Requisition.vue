@@ -1210,6 +1210,19 @@ export default {
     }
     ,
     openRequestModal() {
+      // Clear any previous selection or data
+      this.selectedItem = null;
+      this.requisitionItems = [{
+        name: "",
+        description: "",
+        quantity: 1,
+        unit_cost: 0,
+        total_cost: 0,
+      }];
+      this.specialInstructions = "";
+      this.approverType = null;
+      this.step = 1;
+      
       this.requestModal = true;
     },
     // closeRequestModal() {
