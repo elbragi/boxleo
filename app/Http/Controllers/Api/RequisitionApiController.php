@@ -66,26 +66,59 @@ class RequisitionApiController extends Controller
 
     public function downloadRequisitionsReport(Request $request)
     {
-        Log::info('Generating requisitions report', ['data' => $request->all()]);
+        Log::info('Generating requisitions report started');
 
-        // Validate incoming data (ensure it contains requisitions)
-        $validated = $request->validate([
-            'requisitions' => 'required|array',
-        ]);
+        try {
+            // Validate incoming data
+            $validated = $request->validate([
+                'requisitions' => 'required|array',
+            ]);
 
-        // Load requisitions data from request
-        $requisitions = $validated['requisitions'];
+            // Extract IDs from the input array. 
+            // The frontend sends an array of requisition objects, so we pluck 'id'.
+            // If it sends mixed data, we filter for valid IDs.
+            $inputRequisitions = collect($validated['requisitions']);
+            $ids = $inputRequisitions->pluck('id')->filter()->toArray();
 
+            if (empty($ids)) {
+                 return response()->json(['error' => 'No valid requisitions selected.'], 400);
+            }
 
-        // Generate PDF using Blade template
-        $pdf = Pdf::loadView('requisitions.report', compact('requisitions'))
-            ->setPaper('a4', 'landscape');
+            // Fetch fresh data from DB to ensure relationships exist and data is valid
+            // This avoids issues with partial data from frontend or array/object mismatches in View
+            $requisitions = Requisition::with(['items', 'user.department'])
+                ->whereIn('id', $ids)
+                ->orderBy('created_at', 'desc') // Optional: Keep consistent order
+                ->get();
 
-        return response()->stream(
-            fn() => print($pdf->output()),
-            200,
-            ['Content-Type' => 'application/pdf', 'Content-Disposition' => 'attachment; filename="requisitions_report.pdf"']
-        );
+            if ($requisitions->isEmpty()) {
+                 return response()->json(['error' => 'Requisitions not found in database.'], 404);
+            }
+
+            // Generate PDF using Blade template
+            // Note: View now expects Eloquent Models ($req->property)
+            $pdf = Pdf::loadView('requisitions.report', compact('requisitions'))
+                ->setPaper('a4', 'landscape');
+
+            Log::info('PDF generated successfully, streaming response.');
+
+            return response()->stream(
+                fn() => print($pdf->output()),
+                200,
+                ['Content-Type' => 'application/pdf', 'Content-Disposition' => 'attachment; filename="requisitions_report.pdf"']
+            );
+
+        } catch (\Exception $e) {
+            Log::error('Error generating PDF file', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'error' => 'Error generating PDF file. Please check logs for details.',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
 

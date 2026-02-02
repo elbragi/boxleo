@@ -92,25 +92,25 @@
             </thead>
             <tbody>
                 @foreach($requisitions as $requisition)
-                    @foreach($requisition['items'] as $index => $item)
+                    @foreach($requisition->items as $index => $item)
                     @php
-                        $grandTotal += $item['total_cost'];
+                        $grandTotal += $item->total_cost;
                     @endphp
                     <tr>
                         <!-- <td>{{ $index + 1 }}</td> -->
-                        <td>{{ $requisition['id'] }}</td>
-                        <td>{{ $requisition['user']['firstname'] }} {{ $requisition['user']['lastname'] }}</td>
-                        <td>{{ $requisition['status'] }}</td>
-                        <td>{{ $requisition['special_instructions'] }}</td>
-                        <td>{{ $requisition['user']['department']['name'] }}</td>
+                        <td>{{ $requisition->id }}</td>
+                        <td>{{ optional($requisition->user)->firstname }} {{ optional($requisition->user)->lastname }}</td>
+                        <td>{{ $requisition->status }}</td>
+                        <td>{{ $requisition->special_instructions }}</td>
+                        <td>{{ optional(optional($requisition->user)->department)->name ?? 'N/A' }}</td>
                      
 
-                        <td>{{ $item['name'] }}</td>
-                        <td>{{ $item['description'] }}</td>
-                        <td>{{ $item['quantity'] }}</td>
-                        <td>{{ number_format($item['unit_cost'], 2) }}</td>
-                        <td>{{ number_format($item['total_cost'], 2) }}</td>
-                        <td>{{ $requisition['pop']}}</td>
+                        <td>{{ $item->name }}</td>
+                        <td>{{ $item->description }}</td>
+                        <td>{{ $item->quantity }}</td>
+                        <td>{{ number_format($item->unit_cost, 2) }}</td>
+                        <td>{{ number_format($item->total_cost, 2) }}</td>
+                        <td>{{ $requisition->pop }}</td>
                     </tr>
                     @endforeach
                 @endforeach
