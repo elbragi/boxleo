@@ -864,7 +864,13 @@ export default {
         });
     },
     downloadReport() {
-      axios.post('/api/v1/download-requisitions-report', { requisitions: this.requisitions }, { responseType: 'blob' })
+      // Only download what's currently visible/filtered
+      if (!this.filteredRequisitions || this.filteredRequisitions.length === 0) {
+        this.$toastr.warning('No requisitions to download. Please adjust your filters.');
+        return;
+      }
+
+      axios.post('/api/v1/download-requisitions-report', { requisitions: this.filteredRequisitions }, { responseType: 'blob' })
         .then(response => {
           // Create a blob from the response data
           const blob = new Blob([response.data], { type: 'application/pdf' });
