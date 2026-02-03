@@ -252,6 +252,7 @@ export default {
             departments: [],
             leaveTypes: [],
             leaves: [],
+            allLeaves: [], // Store all leaves for filtering
             tableHeaders: [
                 { title: '#', value: 'id' },
                 { title: 'Employee', value: 'user.firstname' },
@@ -297,22 +298,8 @@ export default {
         },
 
         async submitForm() {
-            try {
-                // Assuming you have an API endpoint to fetch leaves with a POST request
-                const response = await axios.post('/api/v1/fetch-leaves', this.form);
-
-                // Update the leaves array with the fetched leaves
-                this.leaves = response.data.leaves; // Assuming the response has a 'leaves' property
-
-                // Handle the response as needed
-                console.log('Leaves fetched successfully:', this.leaves);
-
-                // Optionally, you can reset the form after fetching leaves
-                this.resetForm();
-            } catch (error) {
-                // Handle errors, show user feedback, etc.
-                console.error('Error fetching leaves:', error);
-            }
+            // Filter leaves based on form criteria
+            this.filterLeaves();
         },
 
         fetchUsers() {
@@ -345,11 +332,56 @@ export default {
             axios.post(apiUrl, formData)
                 .then(response => {
                     console.log('API Response:', response);
+                    // Store all leaves for filtering
+                    this.allLeaves = response.data.leaves;
                     this.leaves = response.data.leaves;
                 })
                 .catch(error => {
                     console.error('Error fetching leaves:', error);
                 });
+        },
+
+        filterLeaves() {
+            let filtered = [...this.allLeaves];
+
+            // Filter by user
+            if (this.form.user_id && this.form.user_id !== '') {
+                filtered = filtered.filter(leave => leave.user.id === this.form.user_id);
+            }
+
+            // Filter by status
+            if (this.form.status && this.form.status !== 'All') {
+                filtered = filtered.filter(leave => leave.status === this.form.status);
+            }
+
+            // Filter by application date
+            if (this.form.application_date && this.form.application_date !== 'All') {
+                const now = new Date();
+                filtered = filtered.filter(leave => {
+                    const leaveDate = new Date(leave.created_at);
+                    
+                    switch (this.form.application_date) {
+                        case 'Today':
+                            return leaveDate.toDateString() === now.toDateString();
+                        case 'Current Week':
+                            const weekStart = new Date(now.setDate(now.getDate() - now.getDay()));
+                            const weekEnd = new Date(now.setDate(weekStart.getDate() + 6));
+                            return leaveDate >= weekStart && leaveDate <= weekEnd;
+                        case 'Last Week':
+                            const lastWeekStart = new Date(now.setDate(now.getDate() - now.getDay() - 7));
+                            const lastWeekEnd = new Date(now.setDate(lastWeekStart.getDate() + 6));
+                            return leaveDate >= lastWeekStart && leaveDate <= lastWeekEnd;
+                        case 'Current Month':
+                            return leaveDate.getMonth() === now.getMonth() && leaveDate.getFullYear() === now.getFullYear();
+                        case 'Current Year':
+                            return leaveDate.getFullYear() === now.getFullYear();
+                        default:
+                            return true;
+                    }
+                });
+            }
+
+            this.leaves = filtered;
         },
         resetForm() {
             this.form = {
