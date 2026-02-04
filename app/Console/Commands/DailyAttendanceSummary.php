@@ -143,7 +143,7 @@ class DailyAttendanceSummary extends Command
             case 6: // Saturday
                 return Carbon::createFromTime(8, 30, 0); // 08:30
             default: // Monday to Friday (1-5)
-                return Carbon::createFromTime(8, 1, 0); // 08:01
+                return Carbon::createFromTime(8, 2, 0); // 08:02
         }
     }
 
