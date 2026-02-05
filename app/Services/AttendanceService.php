@@ -25,7 +25,7 @@ class AttendanceService
     $userTime = Carbon::parse($clockInTime)->setTimezone($unit->timezone);
 
     // Set default thresholds
-    $defaultLateThreshold = $unit->late_threshold ?? '08:02';
+    $defaultLateThreshold = $unit->late_threshold ?? '08:01';
     $weekendThreshold = $unit->weekend_threshold ?? '08:30';
     $sundayThreshold = $unit->sunday_threshold ?? '11:00'; // Dynamic with fallback
 
@@ -93,7 +93,7 @@ class AttendanceService
 
     $userTime = Carbon::parse($clockInTime)->setTimezone($unit->timezone);
 
-    $defaultLateThreshold = $unit->late_threshold ?? '08:02';
+    $defaultLateThreshold = $unit->late_threshold ?? '08:01';
     $weekendThreshold = $unit->weekend_threshold ?? '08:30';
     $sundayThreshold = '11:00'; // Hardcoded as requested
 
