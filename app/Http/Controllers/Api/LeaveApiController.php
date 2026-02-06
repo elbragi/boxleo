@@ -332,6 +332,7 @@ class LeaveApiController extends Controller
 
     $leaveType = LeaveType::find($request->leave_type_id);
     if ($leaveType) {
+      // Create balance record if it doesn't exist, but DO NOT deduct yet (wait for approval)
       $userLeaveBalance = LeaveBalance::firstOrCreate([
         'user_id' => $request->user_id,
         'leave_type_id' => $request->leave_type_id,
@@ -340,14 +341,14 @@ class LeaveApiController extends Controller
         'taken' => 0,
       ]);
 
-      $userLeaveBalance->decrement('balance', $leaveDays);
-      $userLeaveBalance->increment('taken', $leaveDays);
+      // Deduction moved to approval stage
+      // $userLeaveBalance->decrement('balance', $leaveDays);
+      // $userLeaveBalance->increment('taken', $leaveDays);
 
-      Log::info('Leave balance updated', [
+      Log::info('Leave balance record checked/created (deduction deferred)', [
         'user_id' => $request->user_id,
         'leave_type_id' => $request->leave_type_id,
-        'new_balance' => $userLeaveBalance->balance,
-        'taken' => $userLeaveBalance->taken,
+        'current_balance' => $userLeaveBalance->balance,
       ]);
     } else {
       Log::error('Leave type not found', ['leave_type_id' => $request->leave_type_id]);
@@ -356,18 +357,9 @@ class LeaveApiController extends Controller
 
     $this->logLeaveAction($leave, 'created', $request->user_id);
 
-    // Notify the manager - don't fail leave application if email fails
-    try {
-      $managerUser->notify(new LeaveCreatedNotification($leave));
-      Log::info('Notification sent to manager', ['email' => $managerUser->email]);
-    } catch (\Exception $e) {
-      Log::error('Failed to send leave notification email', [
-        'error' => $e->getMessage(),
-        'leave_id' => $leave->id,
-        'manager_email' => $managerUser->email
-      ]);
-      // Continue - leave application was successful, only email failed
-    }
+    // Notify the manager first
+    $managerUser->notify(new LeaveCreatedNotification($leave));
+    Log::info('Notification sent to manager', ['email' => $managerUser->email]);
 
     return response()->json(['message' => 'Leave application submitted successfully!']);
   }
@@ -588,6 +580,10 @@ class LeaveApiController extends Controller
         case 'Pending':
           // Only Country Manager (designation_id === 1) or HR can approve initial request
           if ($approver->designation_id === 1 || ($approver->is_hr === 1 && $approver->department_id === 1)) {
+            
+            // DEDUCT BALANCE HERE (First Approval)
+            $this->deductLeaveBalance($leave);
+
             if ($isInternOrAssistantOutsideKenya) {
               // Special case: Set custom status for interns/assistants outside Kenya
               $leave->status = 'Manager Approval Only';
@@ -807,18 +803,26 @@ class LeaveApiController extends Controller
     $user_id = $leave->user_id;
 
     try {
+      $originalStatus = $leave->status;
 
       $leave->status = 'Cancelled';
       $leave->comment = $request->comment;
       $leave->is_active == 0;
       $leave->save();
 
-      $userLeaveBalance = LeaveBalance::where('user_id', $leave->user_id)
-        ->where('leave_type_id', $leave->leave_type_id)
-        ->first();
+      // Only restore balance if it was previously deducted (i.e. status was NOT Pending)
+      if ($originalStatus !== 'Pending') {
+        $userLeaveBalance = LeaveBalance::where('user_id', $leave->user_id)
+          ->where('leave_type_id', $leave->leave_type_id)
+          ->first();
 
-      if ($userLeaveBalance) {
-        $userLeaveBalance->increment('balance', $leave->days);
+        if ($userLeaveBalance) {
+          $userLeaveBalance->increment('balance', $leave->days);
+          $userLeaveBalance->decrement('taken', $leave->days); // Also fix the 'taken' count
+          Log::info("Restored leave balance for cancelled leave (Original Status: $originalStatus)", ['leave_id' => $leave->id]);
+        }
+      } else {
+          Log::info("Leave cancelled but no balance restoration needed (Status was Pending)", ['leave_id' => $leave->id]);
       }
 
       $this->logLeaveAction($leave, 'Cancelled', $user_id);
@@ -827,6 +831,34 @@ class LeaveApiController extends Controller
     } catch (\Exception $e) {
       Log::debug($e);
       return response()->json(['error' => 'Failed to cancel leave'], 500);
+    }
+  }
+
+  /**
+   * Helper to deduct leave balance upon approval
+   */
+  private function deductLeaveBalance(Leave $leave)
+  {
+    $userLeaveBalance = LeaveBalance::where('user_id', $leave->user_id)
+      ->where('leave_type_id', $leave->leave_type_id)
+      ->first();
+
+    if ($userLeaveBalance) {
+      $userLeaveBalance->decrement('balance', $leave->days);
+      $userLeaveBalance->increment('taken', $leave->days);
+
+      Log::info('Leave balance deducted upon approval', [
+        'leave_id' => $leave->id,
+        'user_id' => $leave->user_id,
+        'days_deducted' => $leave->days,
+        'new_balance' => $userLeaveBalance->balance,
+      ]);
+    } else {
+      Log::warning('Leave balance record not found during approval deduction', [
+        'leave_id' => $leave->id,
+        'user_id' => $leave->user_id
+      ]);
+      // Optional: Create it? But store() should have created it.
     }
   }
 
