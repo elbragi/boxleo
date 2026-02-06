@@ -356,9 +356,18 @@ class LeaveApiController extends Controller
 
     $this->logLeaveAction($leave, 'created', $request->user_id);
 
-    // Notify the manager first
-    $managerUser->notify(new LeaveCreatedNotification($leave));
-    Log::info('Notification sent to manager', ['email' => $managerUser->email]);
+    // Notify the manager - don't fail leave application if email fails
+    try {
+      $managerUser->notify(new LeaveCreatedNotification($leave));
+      Log::info('Notification sent to manager', ['email' => $managerUser->email]);
+    } catch (\Exception $e) {
+      Log::error('Failed to send leave notification email', [
+        'error' => $e->getMessage(),
+        'leave_id' => $leave->id,
+        'manager_email' => $managerUser->email
+      ]);
+      // Continue - leave application was successful, only email failed
+    }
 
     return response()->json(['message' => 'Leave application submitted successfully!']);
   }
