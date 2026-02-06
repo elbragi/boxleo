@@ -246,7 +246,7 @@
 
                 <!-- edit requisition -->
                 <v-icon
-                  v-if="item.status == 'Pending' || item.status == 'Manager Approved' || item.status == 'HR Approved'"
+                  v-if="(item.status == 'Pending' || item.status == 'Manager Approved' || item.status == 'HR Approved') || (['Approved', 'Finance Manager Approved', 'COO Approved', 'CFO Approved'].includes(item.status) && (isFinanceManager || isFinanceOfficer))"
                   @click="openEditRequisitionModal(item)" color="primary" style="margin-right: 8px;"
                   title="Edit Requisition">
                   mdi-pencil
@@ -672,34 +672,26 @@ export default {
   computed: {
 
 
-  filteredRequisitions() {
-    // First apply tab-based filtering (current vs all)
-    let result = this.tab === 1
-      ? this.requisitions.filter(req => {
+
+    filteredRequisitions() {
+      // First apply tab-based filtering (current vs all)
+      let result = this.tab === 1
+        ? this.requisitions.filter(req => {
           const today = new Date().toISOString().slice(0, 10); // Format: YYYY-MM-DD
           return req.created_at.slice(0, 10) === today;
         })
-      : this.requisitions; // Show all when tab is 2
+        : this.requisitions;
 
-    // Then apply role-based filtering if needed
-    // if (this.user) {
-    //   if (this.user.is_cfo) {
-    //     result = result.filter(req => req.status === 'COO Approved');
-    //   } else if (this.user.is_coo) {
-    //     result = result.filter(req => req.status === 'HR Approved');
-    //   } else if (this.user.is_hr) {
-    //     result = result.filter(req =>
-    //       req.status === 'Manager Approved' ||
-    //       req.status === 'Finance Manager Approved'
-    //     );
-    //   }
-    //   // Finance Manager sees all requisitions, so no additional filtering needed
-    //   // Regular users also see all requisitions that pass the tab filter
-    // }
-
-    return result;
-  }
-},
+      return result;
+    },
+    isFinanceManager() {
+      return this.user && this.user.is_finance_manager === 1;
+    },
+    isFinanceOfficer() {
+      // Department 2 = Finance, Designation 4 = Officer
+      return this.user && this.user.department_id === 2 && this.user.designation_id === 4;
+    }
+  },
 
   methods: {
 
