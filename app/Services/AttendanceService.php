@@ -26,7 +26,7 @@ class AttendanceService
 
     // Set default thresholds
     $defaultLateThreshold = $unit->late_threshold ?? '08:01';
-    $weekendThreshold = $unit->weekend_threshold ?? '08:30';
+    $weekendThreshold = $unit->weekend_threshold ?? '08:31';
     $sundayThreshold = $unit->sunday_threshold ?? '11:00'; // Dynamic with fallback
 
     // Get day of week (0 = Sunday, 6 = Saturday)
@@ -94,7 +94,7 @@ class AttendanceService
     $userTime = Carbon::parse($clockInTime)->setTimezone($unit->timezone);
 
     $defaultLateThreshold = $unit->late_threshold ?? '08:01';
-    $weekendThreshold = $unit->weekend_threshold ?? '08:30';
+    $weekendThreshold = $unit->weekend_threshold ?? '08:31';
     $sundayThreshold = '11:00'; // Hardcoded as requested
 
     $userDayOfWeek = $userTime->dayOfWeek;

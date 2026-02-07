@@ -134,14 +134,14 @@ class DailyAttendanceSummary extends Command
     private function getLateThreshold($dayOfWeek, $isHoliday)
     {
         if ($isHoliday) {
-            return Carbon::createFromTime(8, 30, 0); // 08:30 for holidays
+            return Carbon::createFromTime(8, 31, 0); // 08:31 for holidays
         }
 
         switch ($dayOfWeek) {
             case 0: // Sunday
                 return Carbon::createFromTime(11, 0, 0); // 11:00
             case 6: // Saturday
-                return Carbon::createFromTime(8, 30, 0); // 08:30
+                return Carbon::createFromTime(8, 31, 0); // 08:31
             default: // Monday to Friday (1-5)
                 return Carbon::createFromTime(8, 1, 0); // 08:01
         }
