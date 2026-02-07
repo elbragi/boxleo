@@ -12,14 +12,13 @@ use App\Models\LeaveType;
 use App\Models\User;
 use App\Notifications\LeaveApprovalNotification;
 use App\Notifications\LeaveCreatedNotification;
-use App\Notifications\LeaveCanceledNotification;
-use App\Notifications\TaskAssignedNotification;
 use Barryvdh\DomPDF\Facade\Pdf;
 use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use App\Notifications\TaskAssignedNotification;
 
 
 class LeaveApiController extends Controller
@@ -465,6 +464,81 @@ class LeaveApiController extends Controller
 
 
 
+  // private function notifyNextApprover(Leave $leave, string $role)
+  // {
+  //   $nextApprovers = match ($role) {
+  //     'HR' => User::where('is_hr', 1)->get(),  // Get all HRs
+  //     'HOD' => User::whereHas('hodDepartments', function ($query) use ($leave) {
+  //       $query->where('department_id', $leave->user->department_id);
+  //     })->get(),  // Get HODs ONLY for the leave applicant’s department
+  //     default => collect(),
+  //   };
+
+  //   foreach ($nextApprovers as $approver) {
+  //     $approver->notify(new LeaveCreatedNotification($leave));
+  //     Log::info("Notified HOD (User ID: {$approver->id}) for Department ID: {$leave->user->department_id} regarding Leave ID: {$leave->id}");
+  //   }
+  // }
+
+
+  // /**
+  //  * Notify the employee upon final approval
+  //  */
+  // private function notifyEmployee(Leave $leave)
+  // {
+  //   $message = "Hello {$leave->user->firstname}, Your leave request from {$leave->from} to {$leave->to} has been approved.";
+  //   $smsUtil = match ($leave->user->unit_id) {
+  //     2 => new UGSMSUtil(),
+  //     3 => new TZSMSUtil(),
+  //     default => new SMSUtil(),
+  //   };
+
+  //   try {
+  //     $smsUtil->sendSMS($leave->phone, $message);
+  //     $leave->user->notify(new LeaveApprovalNotification($leave));
+
+  //     Log::info("Sent leave approval email to employee {$leave->user->firstname} (Email: {$leave->user->email})");
+  //     Log::info("Sent leave approval SMS to employee {$leave->user->firstname} (Phone: {$leave->phone})");
+  //   } catch (\Exception $e) {
+  //     Log::error("Failed to send SMS, sending email instead", ['exception' => $e]);
+
+  //     // Send email as a fallback
+  //     // $leave->user->notify(new LeaveCreatedNotification($leave));
+
+  //     $leave->user->notify(new LeaveApprovalNotification($leave));
+
+  //     Log::info("Sent leave approval email to employee {$leave->user->firstname} (Email: {$leave->user->email})");
+  //   }
+  // }
+
+  // /**
+  //  * Notify task assignees after leave approval
+  //  */
+  // private function notifyTaskAssignees(Leave $leave)
+  // {
+  //   // Get the delegated tasks
+  //   $tasks = $leave->tasks ?? [];
+
+  //   foreach ($tasks as $task) {
+  //     // Skip tasks with no assignee
+  //     if (empty($task['assignee_id'])) {
+  //       continue;
+  //     }
+
+  //     // Find the assignee user
+  //     $assignee = User::find($task['assignee_id']);
+
+  //     if ($assignee) {
+  //       // Notify the assignee through email
+  //       $assignee->notify(new TaskAssignedNotification($leave, $task->toArray()));
+
+  //       Log::info("Notified task assignee {$assignee->firstname} (User ID: {$assignee->id}) for Leave ID: {$leave->id}, Task: {$task['task_description']}");
+  //     } else {
+  //       Log::warning("Task assignee not found for User ID: {$task['assignee_id']} on Leave ID: {$leave->id}");
+  //     }
+  //   }
+  // }
+
 
 
 
@@ -717,10 +791,6 @@ class LeaveApiController extends Controller
       $sms_util = new SMSUtil();
       $sms_util->sendSMS($sender_phone, $cancelMessage);
 
-      // Email Notification to Employee
-      $leave->user->notify(new LeaveCanceledNotification($leave, $firstName, $request->comment));
-      Log::info("Sent leave cancellation email to employee {$leave->user->firstname}");
-
       return response()->json(['message' => 'Leave canceled successfully'], 200);
     } catch (\Exception $e) {
       Log::error($e);
@@ -756,14 +826,6 @@ class LeaveApiController extends Controller
       }
 
       $this->logLeaveAction($leave, 'Cancelled', $user_id);
-
-      // Notify Manager of cancellation by user
-      $manager = User::find($leave->user->manager_id);
-      if ($manager) {
-          $userName = $leave->user->firstname . ' ' . $leave->user->lastname;
-          $manager->notify(new LeaveCanceledNotification($leave, $userName, $request->comment));
-          Log::info("Sent leave cancellation email (user action) to manager {$manager->firstname}");
-      }
 
       return response()->json(['message' => 'Leave canceled successfully'], 200);
     } catch (\Exception $e) {
@@ -1185,11 +1247,8 @@ class LeaveApiController extends Controller
 
           $cancelMessage = "Hi $employeeName, Your Leave application from $leave->from to $leave->to has been Cancelled by " . $firstName . ", Reason: " . $comment;
 
+          $sms_util = new SMSUtil();
           $sms_util->sendSMS($sender_phone, $cancelMessage);
-
-          // Email Notification to Employee
-          $leave->user->notify(new LeaveCanceledNotification($leave, $firstName, $comment));
-          Log::info("Sent bulk leave cancellation email to employee {$leave->user->firstname}");
 
           $results['success'][] = $leaveId;
         } catch (\Exception $e) {

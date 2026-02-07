@@ -246,7 +246,7 @@
 
                 <!-- edit requisition -->
                 <v-icon
-                  v-if="(item.status == 'Pending' || item.status == 'Manager Approved' || item.status == 'HR Approved') || (['Approved', 'Finance Manager Approved', 'COO Approved', 'CFO Approved'].includes(item.status) && (isFinanceManager || isFinanceOfficer))"
+                  v-if="item.status == 'Pending' || item.status == 'Manager Approved' || item.status == 'HR Approved'"
                   @click="openEditRequisitionModal(item)" color="primary" style="margin-right: 8px;"
                   title="Edit Requisition">
                   mdi-pencil
@@ -672,26 +672,34 @@ export default {
   computed: {
 
 
-
-    filteredRequisitions() {
-      // First apply tab-based filtering (current vs all)
-      let result = this.tab === 1
-        ? this.requisitions.filter(req => {
+  filteredRequisitions() {
+    // First apply tab-based filtering (current vs all)
+    let result = this.tab === 1
+      ? this.requisitions.filter(req => {
           const today = new Date().toISOString().slice(0, 10); // Format: YYYY-MM-DD
           return req.created_at.slice(0, 10) === today;
         })
-        : this.requisitions;
+      : this.requisitions; // Show all when tab is 2
 
-      return result;
-    },
-    isFinanceManager() {
-      return this.user && this.user.is_finance_manager === 1;
-    },
-    isFinanceOfficer() {
-      // Department 2 = Finance, Designation 4 = Officer
-      return this.user && this.user.department_id === 2 && this.user.designation_id === 4;
-    }
-  },
+    // Then apply role-based filtering if needed
+    // if (this.user) {
+    //   if (this.user.is_cfo) {
+    //     result = result.filter(req => req.status === 'COO Approved');
+    //   } else if (this.user.is_coo) {
+    //     result = result.filter(req => req.status === 'HR Approved');
+    //   } else if (this.user.is_hr) {
+    //     result = result.filter(req =>
+    //       req.status === 'Manager Approved' ||
+    //       req.status === 'Finance Manager Approved'
+    //     );
+    //   }
+    //   // Finance Manager sees all requisitions, so no additional filtering needed
+    //   // Regular users also see all requisitions that pass the tab filter
+    // }
+
+    return result;
+  }
+},
 
   methods: {
 
@@ -856,13 +864,7 @@ export default {
         });
     },
     downloadReport() {
-      // Only download what's currently visible/filtered
-      if (!this.filteredRequisitions || this.filteredRequisitions.length === 0) {
-        this.$toastr.warning('No requisitions to download. Please adjust your filters.');
-        return;
-      }
-
-      axios.post('/api/v1/download-requisitions-report', { requisitions: this.filteredRequisitions }, { responseType: 'blob' })
+      axios.post('/api/v1/download-requisitions-report', { requisitions: this.requisitions }, { responseType: 'blob' })
         .then(response => {
           // Create a blob from the response data
           const blob = new Blob([response.data], { type: 'application/pdf' });
@@ -1208,19 +1210,6 @@ export default {
     }
     ,
     openRequestModal() {
-      // Clear any previous selection or data
-      this.selectedItem = null;
-      this.requisitionItems = [{
-        name: "",
-        description: "",
-        quantity: 1,
-        unit_cost: 0,
-        total_cost: 0,
-      }];
-      this.specialInstructions = "";
-      this.approverType = null;
-      this.step = 1;
-      
       this.requestModal = true;
     },
     // closeRequestModal() {

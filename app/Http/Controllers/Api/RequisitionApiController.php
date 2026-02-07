@@ -66,59 +66,26 @@ class RequisitionApiController extends Controller
 
     public function downloadRequisitionsReport(Request $request)
     {
-        Log::info('Generating requisitions report started');
+        Log::info('Generating requisitions report', ['data' => $request->all()]);
 
-        try {
-            // Validate incoming data
-            $validated = $request->validate([
-                'requisitions' => 'required|array',
-            ]);
+        // Validate incoming data (ensure it contains requisitions)
+        $validated = $request->validate([
+            'requisitions' => 'required|array',
+        ]);
 
-            // Extract IDs from the input array. 
-            // The frontend sends an array of requisition objects, so we pluck 'id'.
-            // If it sends mixed data, we filter for valid IDs.
-            $inputRequisitions = collect($validated['requisitions']);
-            $ids = $inputRequisitions->pluck('id')->filter()->toArray();
+        // Load requisitions data from request
+        $requisitions = $validated['requisitions'];
 
-            if (empty($ids)) {
-                 return response()->json(['error' => 'No valid requisitions selected.'], 400);
-            }
 
-            // Fetch fresh data from DB to ensure relationships exist and data is valid
-            // This avoids issues with partial data from frontend or array/object mismatches in View
-            $requisitions = Requisition::with(['items', 'user.department'])
-                ->whereIn('id', $ids)
-                ->orderBy('created_at', 'desc') // Optional: Keep consistent order
-                ->get();
+        // Generate PDF using Blade template
+        $pdf = Pdf::loadView('requisitions.report', compact('requisitions'))
+            ->setPaper('a4', 'landscape');
 
-            if ($requisitions->isEmpty()) {
-                 return response()->json(['error' => 'Requisitions not found in database.'], 404);
-            }
-
-            // Generate PDF using Blade template
-            // Note: View now expects Eloquent Models ($req->property)
-            $pdf = Pdf::loadView('requisitions.report', compact('requisitions'))
-                ->setPaper('a4', 'landscape');
-
-            Log::info('PDF generated successfully, streaming response.');
-
-            return response()->stream(
-                fn() => print($pdf->output()),
-                200,
-                ['Content-Type' => 'application/pdf', 'Content-Disposition' => 'attachment; filename="requisitions_report.pdf"']
-            );
-
-        } catch (\Exception $e) {
-            Log::error('Error generating PDF file', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return response()->json([
-                'error' => 'Error generating PDF file. Please check logs for details.',
-                'message' => $e->getMessage()
-            ], 500);
-        }
+        return response()->stream(
+            fn() => print($pdf->output()),
+            200,
+            ['Content-Type' => 'application/pdf', 'Content-Disposition' => 'attachment; filename="requisitions_report.pdf"']
+        );
     }
 
 
@@ -297,42 +264,6 @@ class RequisitionApiController extends Controller
                 'user_id' => $requisition->user_id,
                 'request_data' => $validated,
             ]);
-
-            // Guard: Prevent any updates to Paid requisitions
-            if ($requisition->status === 'Paid') {
-                return response()->json([
-                    'error' => 'Paid requisitions cannot be edited.'
-                ], 403);
-            }
-
-            // Guard: Prevent editing structural content of Approved requisitions
-            // Allow only status/payment updates (paid, pop, comment, etc.)
-            // Exception: Finance Manager can edit approved requisitions
-            // Exception: Finance Officer (Dept 2, Desig 4) can edit approved requisitions
-            $currentUser = auth()->user();
-            $isFinanceManager = $currentUser && $currentUser->is_finance_manager;
-            // Finance Officer Check: Department ID 2 (Finance) and Designation ID 4 (Officer)
-            $isFinanceOfficer = $currentUser && $currentUser->department_id == 2 && $currentUser->designation_id == 4;
-
-            $canEdit = $isFinanceManager || $isFinanceOfficer;
-
-            if (in_array($requisition->status, ['Approved', 'Manager Approved', 'HR Approved', 'Finance Manager Approved', 'COO Approved', 'CFO Approved'])) {
-                // If the user tries to update items, instructions, or approver type, block it.
-                // The 'Mark as Paid' action only sends 'paid', so it will pass.
-                // The 'Update Status' action only sends 'status', so it will pass.
-                // Finance Manager/Officer is allowed to edit.
-                if (
-                    !$canEdit && (
-                        array_key_exists('items', $validated) || 
-                        array_key_exists('special_instructions', $validated) || 
-                        array_key_exists('approver_type', $validated)
-                    )
-                ) {
-                    return response()->json([
-                        'error' => 'Only Finance Manager or Finance Officer can edit approved requisitions.'
-                    ], 403);
-                }
-            }
 
             // Update requisition details
             $requisition->special_instructions = $validated['special_instructions'] ?? $requisition->special_instructions;

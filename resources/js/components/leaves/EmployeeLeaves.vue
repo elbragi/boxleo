@@ -74,11 +74,9 @@
                   </v-col>
 
                   <v-col cols="12" md="6">
-                    <v-text-field v-model="calculatedBusinessDays" label="Days" type="number" variant="outlined"
-                      class="rounded-lg" readonly
-                      hint="Auto-calculated (excludes Sundays)"
-                      persistent-hint
-                      :rules="[v => !!v || 'Please select From and To dates', v => v > 0 || 'Days must be greater than 0']"></v-text-field>
+                    <v-text-field v-model="newLeave.days" label="Days" type="number" variant="outlined"
+                      class="rounded-lg"
+                      :rules="[v => !!v || 'Days are required', v => v > 0 || 'Days must be greater than 0']"></v-text-field>
                   </v-col>
 
                   <v-col cols="12" md="6">
@@ -535,38 +533,6 @@ export default {
       };
     },
 
-    calculatedBusinessDays() {
-      if (!this.newLeave.from || !this.newLeave.to) {
-        return 0;
-      }
-
-      const start = new Date(this.newLeave.from);
-      const end = new Date(this.newLeave.to);
-      
-      // Fixed holidays (format: 'MM-DD')
-      const holidays = ['12-25', '12-26', '01-01'];
-      let businessDays = 0;
-
-      while (start <= end) {
-        const dayOfWeek = start.getDay();
-        const monthDay = String(start.getMonth() + 1).padStart(2, '0') + '-' + String(start.getDate()).padStart(2, '0');
-        
-        // Exclude Sundays (0) and holidays
-        if (dayOfWeek !== 0 && !holidays.includes(monthDay)) {
-          businessDays++;
-        }
-        start.setDate(start.getDate() + 1);
-      }
-
-      return businessDays;
-    }
-
-  },
-  watch: {
-    calculatedBusinessDays(newValue) {
-      // Auto-update the days field when calculated value changes
-      this.newLeave.days = newValue;
-    }
   },
   mounted() {
     this.fetchLeaves();
