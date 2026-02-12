@@ -727,6 +727,7 @@ export default {
       currentUserIdForPermissions: null,
       
       // Role switching
+      user: null,
       selectedRole: null,
       
       // Delete
