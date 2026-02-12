@@ -1442,10 +1442,7 @@ export default {
     },
     
     printPayslip(id) {
-      this.selectedPayrollId = id;
-      setTimeout(() => {
-        this.printCurrentPayslip();
-      }, 500);
+      window.open(`/print-payslip/${id}`, '_blank');
     },
     
     // printCurrentPayslip() {

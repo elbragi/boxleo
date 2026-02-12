@@ -22,7 +22,25 @@ class PayrollController extends Controller
     public function payslipWithUser($id)
     {
         return User::with('userdetails','earnings.earningType','deductions.deductionType')->findOrFail($id);
-
     }   
+
+    public function printPayslip($id)
+    {
+        $employee = User::with([
+            'userdetails',
+            'earnings.earningType',
+            'deductions.deductionType',
+            'unit',
+            'office',
+            'department',
+            'designation',
+            'employee_job_info',
+            'employee_detail',
+            'employee_salary'
+        ])->findOrFail($id);
+
+        $pdf = \PDF::loadView('payroll.payslip', compact('employee'))->setPaper('a5', 'portrait');
+        return $pdf->stream('payslip-' . $id . '.pdf');
+    }
 
 }
