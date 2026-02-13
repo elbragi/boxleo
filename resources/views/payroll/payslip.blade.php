@@ -6,30 +6,31 @@
     <style>
         body {
             font-family: 'DejaVu Sans', sans-serif;
-            font-size: 11px;
+            font-size: 10px;
             color: #333;
             margin: 0;
             padding: 0;
         }
         .container {
             width: 100%;
-            padding: 10px;
+            padding: 5px;
+            min-height: 570px; /* Force min-height for A5 */
         }
         .header-table {
             width: 100%;
-            margin-bottom: 20px;
+            margin-bottom: 25px; /* Added more space */
             border-bottom: 2px solid #e0e0e0;
-            padding-bottom: 10px;
+            padding-bottom: 8px;
         }
         .company-info h2 {
             margin: 0 0 5px 0;
-            color: #d32f2f; /* Red company color */
-            font-size: 20px;
+            color: #1976D2; /* Unified brand blue */
+            font-size: 16px;
             text-transform: uppercase;
         }
         .company-info p {
-            margin: 2px 0;
-            font-size: 10px;
+            margin: 1px 0;
+            font-size: 9px;
             color: #555;
         }
         .payslip-title {
@@ -38,49 +39,52 @@
         }
         .payslip-title h3 {
             margin: 0;
-            font-size: 14px;
+            font-size: 11px;
             color: #666;
+            text-transform: uppercase;
         }
         .payslip-title h1 {
-            margin: 5px 0 0 0;
-            font-size: 18px;
-            color: #000;
+            margin: 3px 0 0 0;
+            font-size: 15px;
+            color: #1976D2;
         }
         
         /* Employee Summary */
         .summary-section {
-            margin-bottom: 20px;
+            margin-bottom: 25px; /* Added more space */
         }
         .section-title {
-            color: #d32f2f;
-            font-size: 12px;
+            color: #000; /* Black for better contrast */
+            font-size: 11px;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             text-transform: uppercase;
+            border-left: 3px solid #000;
+            padding-left: 5px;
         }
         .summary-table {
             width: 100%;
             border-collapse: collapse;
         }
         .summary-table td {
-            padding: 4px 0;
-            width: 25%;
-            font-size: 11px;
+            padding: 3px 0;
+            width: 50%;
+            font-size: 10px;
         }
         .label {
             color: #666;
-            width: 100px;
+            width: 90px;
             display: inline-block;
         }
         .value {
             color: #000;
-            font-weight: normal;
+            font-weight: bold;
         }
 
         /* Income Details */
         .details-container {
             width: 100%;
-            margin-bottom: 20px;
+            margin-bottom: 25px; /* Added more space */
             display: table;
             table-layout: fixed;
         }
@@ -104,13 +108,25 @@
         }
         .details-table th {
             text-align: left;
-            padding: 8px 5px;
-            border-bottom: 1px solid #eee;
-            font-weight: normal;
-            color: #666;
+            padding: 5px;
+            border-bottom: 1px solid #1976D2;
+            font-weight: bold;
+            color: #1976D2;
+            font-size: 11px;
         }
+        
+        /* Color-code columns */
+        .col-left .details-table th {
+            color: #1976D2; /* Earnings Blue */
+            border-bottom-color: #1976D2;
+        }
+        .col-right .details-table th {
+            color: #d32f2f; /* Deductions Red */
+            border-bottom-color: #d32f2f;
+        }
+        
         .details-table td {
-            padding: 8px 5px;
+            padding: 5px;
             border-bottom: 1px solid #eee;
         }
         .amount-col {
@@ -121,44 +137,49 @@
         .total-row td {
             border-top: 1px solid #ddd;
             border-bottom: none;
-            padding-top: 10px;
+            padding-top: 5px;
             font-weight: bold;
+            color: #1976D2; /* Unified brand blue */
+        }
+        .col-right .total-row td {
+            color: #d32f2f; /* Total deductions Red */
         }
         
         /* Net Pay Box */
         .net-pay-box {
-            background-color: #f9f9f9;
-            border: 1px solid #eee;
-            padding: 15px;
-            margin-top: 20px;
+            background-color: #f5f7fa;
+            border: 1px solid #1976D2;
+            padding: 12px;
+            margin-top: 25px; /* Added more space */
         }
         .net-pay-table {
             width: 100%;
         }
         .net-label {
-            font-size: 14px;
-            color: #666;
+            font-size: 12px;
+            font-weight: bold;
+            color: #1976D2;
         }
         .net-desc {
-            font-size: 10px;
-            color: #999;
-            margin-top: 5px;
+            font-size: 9px;
+            color: #666;
+            margin-top: 2px;
         }
         .net-amount {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: bold;
             text-align: right;
-            color: #333;
+            color: #1976D2;
         }
         
         .amount-words {
             margin-top: 15px;
             text-align: right;
-            font-size: 11px;
+            font-size: 10px;
             font-style: italic;
             color: #555;
             border-top: 1px solid #eee;
-            padding-top: 10px;
+            padding-top: 8px;
         }
         
         /* Logo placeholder if image fails */
@@ -187,7 +208,7 @@
                 </td>
                 <td width="40%" class="payslip-title">
                     <h3>Payslip For the Month</h3>
-                    <h1>{{ date('F Y') }}</h1>
+                    <h1>{{ \Carbon\Carbon::createFromDate($payslip->year, $payslip->month, 1)->format('F Y') }}</h1>
                 </td>
             </tr>
         </table>
@@ -198,7 +219,7 @@
             <table class="summary-table">
                 <tr>
                     <td><span class="label">Employee Name</span> <span class="value">: {{ $employee->firstname }} {{ $employee->lastname }}</span></td>
-                    <td><span class="label">Employee ID</span> <span class="value">: {{ $employee->emp_id ?? $employee->id }}</span></td>
+                    <td><span class="label">Employee ID</span> <span class="value">: {{ $employee->staffID ?? $employee->id }}</span></td>
                 </tr>
                 <tr>
                     <td><span class="label">Department</span> <span class="value">: {{ $employee->department->name ?? 'N/A' }}</span></td>
@@ -206,11 +227,11 @@
                 </tr>
                 <tr>
                     <td><span class="label">Branch</span> <span class="value">: {{ $employee->unit->name ?? 'N/A' }}</span></td>
-                    <td><span class="label">Payment Mode</span> <span class="value">: {{ $employee->employee_detail->payment_mode ?? 'Bank Transfer' }}</span></td>
+                    <td><span class="label">Payment Mode</span> <span class="value">: {{ $payslip->payment_mode ?? ($employee->user_detail->payment_mode ?? 'Bank Transfer') }}</span></td>
                 </tr>
                  <tr>
-                    <td><span class="label">Bank</span> <span class="value">: {{ $employee->employee_detail->bank_name ?? 'N/A' }}</span></td>
-                    <td><span class="label">Account No</span> <span class="value">: {{ $employee->employee_detail->bank_account ?? 'N/A' }}</span></td>
+                    <td><span class="label">Bank</span> <span class="value">: {{ $payslip->bank ?? ($employee->user_detail->bank_name ?? 'N/A') }}</span></td>
+                    <td><span class="label">Account No</span> <span class="value">: {{ $payslip->bank_account ?? ($employee->user_detail->bank_account ?? 'N/A') }}</span></td>
                 </tr>
             </table>
         </div>
@@ -230,7 +251,7 @@
                     <tbody>
                         <tr>
                             <td>Basic Pay</td>
-                            <td class="amount-col">{{ number_format($employee->employee_salary->basic_salary ?? 0, 2) }}</td>
+                            <td class="amount-col">{{ number_format($payslip->basic_pay ?? 0, 2) }}</td>
                         </tr>
                         @foreach($employee->earnings as $earning)
                         <tr>
@@ -239,14 +260,9 @@
                         </tr>
                         @endforeach
                         
-                        <!-- Spacers to align height if needed -->
-                        @if($employee->earnings->count() < 3)
-                            <tr><td colspan="2" style="height: 20px;">&nbsp;</td></tr>
-                        @endif
-                        
                         <tr class="total-row">
                             <td>Gross Earnings</td>
-                            <td class="amount-col">KES {{ number_format(($employee->employee_salary->basic_salary ?? 0) + $employee->earnings->sum('amount'), 2) }}</td>
+                            <td class="amount-col">KES {{ number_format($payslip->gross_pay ?? (($payslip->basic_pay ?? 0) + $employee->earnings->sum('amount')), 2) }}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -289,14 +305,9 @@
                         </tr>
                         @endforeach
 
-                         <!-- Spacers to align height -->
-                        @if($employee->deductions->count() < 1)
-                            <tr><td colspan="2" style="height: 20px;">&nbsp;</td></tr>
-                        @endif
-
-                        <tr class="total-row">
+        <tr class="total-row">
                             <td>Total Deductions</td>
-                            <td class="amount-col">KES {{ number_format(($employee->employee_salary->nssf ?? 0) + ($employee->employee_salary->nhif ?? 0) + ($employee->employee_salary->paye ?? 0) + $employee->deductions->sum('amount'), 2) }}</td>
+                            <td class="amount-col">KES {{ number_format($payslip->total_deductions ?? ($employee->deductions->sum('amount')), 2) }}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -312,14 +323,14 @@
                         <div class="net-desc">Gross Earnings - Total Deductions</div>
                     </td>
                     <td align="right">
-                        <div class="net-amount">KES {{ number_format($employee->employee_salary->net_salary ?? 0, 2) }}</div>
+                        <div class="net-amount">KES {{ number_format($payslip->net_pay ?? 0, 2) }}</div>
                     </td>
                 </tr>
             </table>
         </div>
         
         <div class="amount-words">
-            Amount in words: {{ $employee->employee_salary->net_salary_words ?? 'Kenya Shillings Only' }}
+            Amount in words: {{ $payslip->net_pay_words ?? 'Kenya Shillings Only' }}
         </div>
     </div>
 </body>

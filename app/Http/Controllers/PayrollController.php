@@ -21,26 +21,34 @@ class PayrollController extends Controller
 
     public function payslipWithUser($id)
     {
-        return User::with('userdetails','earnings.earningType','deductions.deductionType')->findOrFail($id);
+        return User::with('user_detail','earnings.earningType','deductions.deductionType')->findOrFail($id);
     }   
 
     public function printPayslip($id)
     {
-        $employee = User::with([
-            'userdetails',
-            'earnings.earningType',
-            'deductions.deductionType',
-            'unit',
-            'office',
-            'department',
-            'designation',
-            'employee_job_info',
-            'employee_detail',
-            'employee_salary'
+        $payslip = \App\Models\Payslip::with([
+            'user.user_detail',
+            'user.earnings.earningType',
+            'user.deductions.deductionType',
+            'user.unit',
+            'user.office',
+            'user.department',
+            'user.designation',
+            'user.salary'
         ])->findOrFail($id);
 
-        $pdf = \PDF::loadView('payroll.payslip', compact('employee'))->setPaper('a5', 'portrait');
-        return $pdf->stream('payslip-' . $id . '.pdf');
+        $employee = $payslip->user;
+
+        $pdf = \PDF::loadView('payroll.payslip', compact('payslip', 'employee'))->setPaper('a5', 'portrait');
+        
+        $monthName = \Carbon\Carbon::createFromDate($payslip->year, $payslip->month, 1)->format('F');
+        $filename = 'payslip-' . $employee->firstname . '-' . $monthName . '-' . $payslip->year . '.pdf';
+        
+        if (request()->has('download')) {
+            return $pdf->download($filename);
+        }
+        
+        return $pdf->stream($filename);
     }
 
 }

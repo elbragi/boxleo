@@ -30,7 +30,7 @@ def main():
                 
                 if not password_sent and ("password:" in log.lower()):
                     time.sleep(0.5)
-                    os.write(fd, b"XeGPWXJg7vrU\n")
+                    os.write(fd, b"REDACTED_SSH_PASSWORD\n")
                     password_sent = True
                     log = ""
                 

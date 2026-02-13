@@ -189,7 +189,14 @@
                   <template v-slot:prepend>
                     <v-icon color="primary">mdi-printer</v-icon>
                   </template>
-                  <v-list-item-title>Print</v-list-item-title>
+                  <v-list-item-title>Print PDF</v-list-item-title>
+                </v-list-item>
+
+                <v-list-item v-if="item?.raw?.id" @click="downloadPayslip(item.raw.id)">
+                  <template v-slot:prepend>
+                    <v-icon color="success">mdi-download</v-icon>
+                  </template>
+                  <v-list-item-title>Download PDF</v-list-item-title>
                 </v-list-item>
                 
                 <v-list-item v-if="item?.raw?.id" @click="emailPayslip(item.raw.id)">
@@ -320,6 +327,10 @@
               <v-btn variant="text" color="primary" @click="printPayslip(payroll.id)">
                 <v-icon start>mdi-printer</v-icon>
                 Print
+              </v-btn>
+              <v-btn variant="text" color="success" @click="downloadPayslip(payroll.id)">
+                <v-icon start>mdi-download</v-icon>
+                Download
               </v-btn>
               <v-btn variant="text" color="success" @click="emailPayslip(payroll.id)">
                 <v-icon start>mdi-email</v-icon>
@@ -829,16 +840,40 @@
         
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn variant="text" color="primary" @click="downloadPayslip" prepend-icon="mdi-download">
+          <v-btn variant="text" color="primary" @click="downloadPayslip(selectedPayrollId)" prepend-icon="mdi-download">
             Download
           </v-btn>
-          <v-btn variant="text" color="error" @click="printCurrentPayslip" prepend-icon="mdi-printer">
+          <v-btn variant="text" color="error" @click="printPayslip(selectedPayrollId)" prepend-icon="mdi-printer">
             Print
           </v-btn>
           <v-btn variant="text" @click="payslipDialog = false">
             Close
           </v-btn>
         </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Success Options Dialog -->
+    <v-dialog v-model="showSuccessDialog" max-width="500">
+      <v-card>
+        <v-card-title class="text-h5 bg-success text-white d-flex align-center">
+          <v-icon class="mr-2">mdi-check-circle</v-icon>
+          Success
+        </v-card-title>
+        <v-card-text class="pt-4 text-center">
+          <p class="text-h6 mb-4">Payroll has been generated successfully!</p>
+          <div class="d-flex flex-column gap-3">
+            <v-btn color="primary" block prepend-icon="mdi-printer" @click="printPayslip(lastGeneratedId); showSuccessDialog = false">
+              Print Payslip
+            </v-btn>
+            <v-btn color="success" block prepend-icon="mdi-download" @click="downloadPayslip(lastGeneratedId); showSuccessDialog = false">
+              Download PDF
+            </v-btn>
+            <v-btn variant="outlined" block @click="showSuccessDialog = false">
+              Finish
+            </v-btn>
+          </div>
+        </v-card-text>
       </v-card>
     </v-dialog>
 
@@ -986,6 +1021,8 @@ export default {
       selectedFile: null,
       
       // Filter options
+      showSuccessDialog: false,
+      lastGeneratedId: null,
       filters: {
         month: null,
         year: null,
@@ -1331,50 +1368,50 @@ export default {
       this.payrollDialog = true;
     },
     
-    submitPayroll() {
-      this.isSubmitting = true;
-      
-      // Calculate totals
-      const grossPay = this.calculateGrossPay;
-      const totalDeductions = this.calculateTotalDeductions;
-      const netPay = this.calculateNetPay;
-      
-      // Create or update payroll object
-      const payrollData = {
-        ...this.payrollForm,
-        gross_pay: grossPay,
-        total_deductions: totalDeductions,
-        net_pay: netPay,
-      };
-      
-      // Simulate API call
-      setTimeout(() => {
-        if (this.isEditing) {
-          // Update existing payroll
-          const index = this.payrollData.findIndex(p => p.id === this.selectedPayrollId);
-          this.payrollData[index] = {
-            ...this.payrollData[index],
-            ...payrollData,
-          };
-          
-          this.showNotification('Payroll updated successfully', 'success');
-        } else {
-          // Create new payroll
-          const newPayroll = {
-            id: this.payrollData.length + 1,
-            ...payrollData,
-            user: this.employeeItems.find(e => e.value === payrollData.user_id),
-            payment_status: 'Pending',
-            created_at: new Date().toISOString(),
-          };
-          
-          this.payrollData.push(newPayroll);
-          this.showNotification('Payroll generated successfully', 'success');
-        }
+    async submitPayroll() {
+      if (this.$refs.payrollForm.validate()) {
+        this.isSubmitting = true;
         
-        this.isSubmitting = false;
-        this.payrollDialog = false;
-      }, 1000);
+        // Calculate totals
+        const payrollData = {
+          user_id: this.payrollForm.user_id,
+          basic_pay: parseFloat(this.payrollForm.basic_pay) || 0,
+          gross_pay: this.calculateGrossPay,
+          total_deductions: this.calculateTotalDeductions,
+          net_pay: this.calculateNetPay,
+          month: this.payrollForm.month,
+          year: this.payrollForm.year,
+          payment_mode: this.payrollForm.payment_mode,
+          bank: this.payrollForm.bank,
+          bank_branch: this.payrollForm.bank_branch,
+          bank_account: this.payrollForm.bank_account,
+          pay_date: new Date().toISOString().split('T')[0], // Default to today
+        };
+        
+        try {
+          if (this.isEditing) {
+            // Update existing payroll
+            await axios.put(`/api/v1/payrolls/${this.selectedPayrollId}`, payrollData);
+            this.showNotification('Payroll updated successfully', 'success');
+            await this.fetchPayrolls(); // Refresh list
+          } else {
+            // Create new payroll
+            const response = await axios.post('/api/v1/payrolls', payrollData);
+            const savedPayroll = response.data.payroll;
+            
+            this.lastGeneratedId = savedPayroll.id; // Store for download
+            this.showSuccessDialog = true; // Show success options
+            this.showNotification('Payroll generated successfully', 'success');
+            await this.fetchPayrolls(); // Refresh list
+          }
+          this.payrollDialog = false;
+        } catch (error) {
+          console.error('Error saving payroll:', error);
+          this.showNotification('Failed to save payroll data', 'error');
+        } finally {
+          this.isSubmitting = false;
+        }
+      }
     },
     
     confirmDeletePayroll(id) {
@@ -1500,9 +1537,11 @@ export default {
       }, 1000);
     },
     
-    downloadPayslip() {
-      // Simulate downloading PDF
-      this.showNotification('Payslip downloaded successfully', 'success');
+    downloadPayslip(id) {
+      if (!id) id = this.selectedPayrollId;
+      if (!id) return;
+      window.open(`/print-payslip/${id}?download=1`, '_blank');
+      this.showNotification('Preparing payslip download...', 'success');
     },
     
     // Import/Export methods
@@ -1595,6 +1634,24 @@ export default {
     },
 
 
+    async fetchPayrolls() {
+      this.isLoading = true;
+      try {
+        const response = await axios.get('/api/v1/payrolls');
+        this.payrollData = response.data.map(p => ({
+          ...p,
+          employee: `${p.user.firstname} ${p.user.lastname}`,
+          department: p.user.department?.name || 'N/A',
+          period: `${this.monthItems.find(m => m.value === p.month)?.title} ${p.year}`,
+        }));
+      } catch (error) {
+        console.error('Error fetching payrolls:', error);
+        this.showNotification('Failed to fetch payroll records', 'error');
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
     async fetchEmployees() {
       const apiUrl = 'api/v1/users';
 
@@ -1624,14 +1681,8 @@ export default {
   },
   
   mounted() {
-    // Fetch initial data
-    this.isLoading = true;
     this.fetchEmployees();
-    
-    // Simulate API call
-    setTimeout(() => {
-      this.isLoading = false;
-    }, 800);
+    this.fetchPayrolls();
   },
   
   watch: {

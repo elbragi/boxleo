@@ -57,6 +57,7 @@ import EmployeeLeaves from './components/leaves/EmployeeLeaves.vue'
 import Policies from './components/policies/Policies.vue'
 import Resources from './components/resources/Resources.vue'
 import Payrolls from './components/payrolls/Payrolls.vue'
+import EmployeePayslips from './components/employee/EmployeePayslips.vue'
 import PayrollSettings from './components/payrolls/PayrollSettings.vue';
 import Tasks from './components/tasks/Tasks.vue'
 import Disciplinary from './components/disciplinaries/Disciplinary.vue'
@@ -111,6 +112,7 @@ app.component('leave-balances', LeaveBalances)
 app.component('holidays', Holidays)
 app.component('payrolls', Payrolls)
 app.component('payroll-settings', PayrollSettings)
+app.component('employee-payslips', EmployeePayslips)
 app.component('tasks', Tasks)
 app.component('resources', Resources)
 app.component('disciplinary', Disciplinary)
@@ -123,10 +125,10 @@ app.component('overtime', Overtime)
 app.component('tickets', Tickets)
 // app.component('complaints', Complaints)
 app.component('appraisals', Appraisals)
-app.component('requisition',Requisition)
-app.component('permissions',Permissions)
-app.component('roles',Roles)
-app.component('performance-evaluation',PerformanceEvaluation)
+app.component('requisition', Requisition)
+app.component('permissions', Permissions)
+app.component('roles', Roles)
+app.component('performance-evaluation', PerformanceEvaluation)
 
 
 // Recruitment Dashboard

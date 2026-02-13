@@ -43,7 +43,27 @@ class PayrollApiController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validatedData = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'basic_pay' => 'required|numeric',
+            'gross_pay' => 'required|numeric',
+            'total_deductions' => 'required|numeric',
+            'net_pay' => 'required|numeric',
+            'month' => 'required|integer',
+            'year' => 'required|integer',
+            'payment_mode' => 'nullable|string',
+            'bank' => 'nullable|string',
+            'bank_branch' => 'nullable|string',
+            'bank_account' => 'nullable|string',
+            'pay_date' => 'nullable|date',
+        ]);
+
+        $payslip = Payslip::create($validatedData);
+
+        return response()->json([
+            'message' => 'Payroll generated and saved successfully',
+            'payroll' => $payslip->load('user'),
+        ], 201);
     }
 
     /**

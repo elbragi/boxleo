@@ -46,4 +46,6 @@ delete_test_leaves.php
 force_cleanup.php
 revert_balance_correction.php
 verify_filters.php
+re_evaluate_attendance.php
+run_debug_office.py
 dump.rdb

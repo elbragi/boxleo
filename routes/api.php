@@ -237,6 +237,10 @@ Route::middleware('auth:sanctum')->group(function () {
   Route::post('v1/award-types', [AwardTypeApiController::class, 'store']);
   Route::put('v1/award-types/{awardType}', [AwardTypeApiController::class, 'update']);
   Route::delete('v1/award-types/{awardType}', [AwardTypeApiController::class, 'destroy']);
+  //payroll management
+  Route::get('v1/payrolls', [PayrollApiController::class, 'index']);
+  Route::post('v1/payrolls', [PayrollApiController::class, 'store']);
+  Route::delete('v1/payrolls/{id}', [PayrollApiController::class, 'destroy']);
 });
 
 Route::post('/v1/test-sms', [LeaveApiController::class, 'testSms']);

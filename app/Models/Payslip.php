@@ -11,14 +11,25 @@ class Payslip extends Model
 
     protected $fillable = [
         "user_id",
-        "salary_id",
-        "pay_period",
-        "Earnings",
-        "deductions",
+        "basic_pay",
+        "gross_pay",
+        "total_deductions",
         "net_pay",
+        "month",
+        "year",
+        "pay_date",
+        "payment_mode",
+        "bank",
+        "bank_branch",
+        "bank_account",
     ];
 
 
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     public function earnings()
     {
