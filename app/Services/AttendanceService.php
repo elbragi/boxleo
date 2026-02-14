@@ -22,7 +22,8 @@ class AttendanceService
     }
 
     // Convert clock-in time to unit's timezone
-    $userTime = Carbon::parse($clockInTime)->setTimezone($unit->timezone);
+    // $userTime = Carbon::parse($clockInTime)->setTimezone($unit->timezone);
+    $userTime = Carbon::parse($clockInTime); // Do NOT setTimezone, treat as local time
 
     // Set default thresholds
     $defaultLateThreshold = $unit->late_threshold ?? '08:01';
