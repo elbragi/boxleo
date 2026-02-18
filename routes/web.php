@@ -172,6 +172,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/resources', [ResourceController::class, 'index']);
     Route::get('/employee-voice', [ComplaintController::class, 'employeeComplaints']);
     Route::get('/employee-leaves', [LeaveController::class, 'employeeLeaves']);
+    Route::get('/leave-documents/{filename}', [LeaveController::class, 'downloadDocument'])->name('leaves.download');
 
     // performance
     Route::get('/performance-evaluations', [PerformanceController::class, 'performanceEvaluations'])->name('performance-evaluations');
