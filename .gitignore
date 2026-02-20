@@ -16,12 +16,15 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+/.roo
+.roomodes
 # public/build/manifest.json
 
 # /resources/views/auth/login.blade.php
 # /resources/views/emails/employee-welcome-note.blade.php
 # /resources/views/includes/sidebar.blade.php
 
+# AI context & sensitive project docs
 AI_MEMORY.md
 
 # Remote helper scripts
