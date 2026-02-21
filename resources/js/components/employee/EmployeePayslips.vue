@@ -190,7 +190,8 @@ export default {
       }
     },
     downloadPayslip(id) {
-      window.open(`/print-payslip/${id}?download=1`, '_blank');
+      if (!id) return;
+      window.open(`/employee-print-payslip/${id}?download=1`, '_blank');
     },
     formatCurrency(value) {
       return new Intl.NumberFormat('en-KE', {

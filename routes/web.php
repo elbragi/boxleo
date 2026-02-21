@@ -103,7 +103,6 @@ Route::middleware(['role:admin'])->group(function () {
     Route::get('/biometrics', [UserController::class, 'biometrics'])->name("biometrics");
     Route::get('/activity', [ActivityController::class, 'index'])->name('activity');
     Route::get('/clear-activity', [ActivityController::class, 'markAsRead'])->name('clear-all');
-    Route::get('/print-payslip/{id}', [PayrollController::class, 'printPayslip']);
     Route::get('/attendance-summary', [AttendanceController::class, 'index'])->name('attendanceSummary');
     Route::get('/attendance-analytics', [AttendanceController::class, 'analytics']);
     Route::get('/leave-summary', [LeaveController::class, 'leaveSummary'])->name('leaveSummary');
@@ -156,6 +155,7 @@ Route::middleware(['role:employee'])->group(function () {
     Route::get('/employee-notifications', [NotificationController::class, 'employeeNofications']);
     Route::get('/employee-settings', [SettingsController::class, 'employeeSettings']);
     Route::get('/employee-timeline', [TimelineController::class, 'employeeTimeline']);
+    Route::get('/employee-print-payslip/{id}', [PayrollController::class, 'employeePrintPayslip']);
 });
 
 // shared auth routes
@@ -173,6 +173,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/employee-voice', [ComplaintController::class, 'employeeComplaints']);
     Route::get('/employee-leaves', [LeaveController::class, 'employeeLeaves']);
     Route::get('/leave-documents/{filename}', [LeaveController::class, 'downloadDocument'])->name('leaves.download');
+    Route::get('/print-payslip/{id}', [PayrollController::class, 'printPayslip']);
+    Route::get('/employee-print-payslip/{id}', [PayrollController::class, 'employeePrintPayslip']);
 
     // performance
     Route::get('/performance-evaluations', [PerformanceController::class, 'performanceEvaluations'])->name('performance-evaluations');

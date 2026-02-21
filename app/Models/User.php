@@ -68,6 +68,22 @@ class User extends Authenticatable
     'password' => 'hashed',
   ];
 
+  public static function boot()
+  {
+    parent::boot();
+
+    static::created(function ($user) {
+      // Initialize leave balances for all leave types when a new user is created
+      $leaveTypes = \App\Models\LeaveType::all();
+      foreach ($leaveTypes as $leaveType) {
+        \App\Models\LeaveBalance::firstOrCreate(
+          ['user_id' => $user->id, 'leave_type_id' => $leaveType->id],
+          ['allocated' => $leaveType->days, 'taken' => 0, 'balance' => $leaveType->days]
+        );
+      }
+    });
+  }
+
   public function unit()
   {
     return $this->belongsTo(Unit::class, 'unit_id');

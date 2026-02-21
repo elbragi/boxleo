@@ -11,6 +11,12 @@ class Payslip extends Model
 
     protected $fillable = [
         "user_id",
+        "is_rider",
+        "rider_name",
+        "deliveries_count",
+        "rate_per_delivery",
+        "start_date",
+        "end_date",
         "basic_pay",
         "gross_pay",
         "total_deductions",

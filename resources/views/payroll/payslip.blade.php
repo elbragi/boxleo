@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>{{ $employee->firstname }} {{ $employee->lastname }} - Payslip</title>
+    <title>{{ $payslip->is_rider ? $payslip->rider_name : ($employee ? ($employee->firstname . ' ' . $employee->lastname) : 'Employee') }} - Payslip</title>
     <style>
         body {
             font-family: 'DejaVu Sans', sans-serif;
@@ -207,31 +207,42 @@
                     <p>Email: info@boxleocourier.com | Tel: +254 711 082 433</p>
                 </td>
                 <td width="40%" class="payslip-title">
-                    <h3>Payslip For the Month</h3>
-                    <h1>{{ \Carbon\Carbon::createFromDate($payslip->year, $payslip->month, 1)->format('F Y') }}</h1>
+                    @if($payslip->is_rider && $payslip->start_date && $payslip->end_date)
+                        <h3 style="text-transform: uppercase;">Payslip for {{ \Carbon\Carbon::parse($payslip->start_date)->format('M jS') }} to {{ \Carbon\Carbon::parse($payslip->end_date)->format('M jS') }}</h3>
+                    @else
+                        <h3>Payslip For the Month</h3>
+                        <h1>{{ \Carbon\Carbon::createFromDate($payslip->year, $payslip->month, 1)->format('F Y') }}</h1>
+                    @endif
                 </td>
             </tr>
         </table>
 
         <!-- Employee Summary -->
         <div class="summary-section">
-            <div class="section-title">Employee Pay Summary </div>
+            <div class="section-title">{{ $payslip->is_rider ? 'RIDER PAY SUMMARY' : 'EMPLOYEE PAY SUMMARY' }}</div>
             <table class="summary-table">
                 <tr>
-                    <td><span class="label">Employee Name</span> <span class="value">: {{ $employee->firstname }} {{ $employee->lastname }}</span></td>
-                    <td><span class="label">Employee ID</span> <span class="value">: {{ $employee->staffID ?? $employee->id }}</span></td>
+                    <td><span class="label">{{ $payslip->is_rider ? 'Rider Name' : 'Employee Name' }}</span> <span class="value">: {{ $payslip->is_rider ? $payslip->rider_name : ($employee ? ($employee->firstname . ' ' . $employee->lastname) : 'Employee') }}</span></td>
+                    <td><span class="label">{{ $payslip->is_rider ? 'Rider ID' : 'Employee ID' }}</span> <span class="value">: {{ $employee ? ($employee->staffID ?? $employee->id) : 'RIDER' }}</span></td>
                 </tr>
+                @if(!$payslip->is_rider)
                 <tr>
-                    <td><span class="label">Department</span> <span class="value">: {{ $employee->department->name ?? 'N/A' }}</span></td>
-                    <td><span class="label">Designation</span> <span class="value">: {{ $employee->designation->name ?? 'N/A' }}</span></td>
+                    <td><span class="label">Department</span> <span class="value">: {{ $employee ? ($employee->department->name ?? 'N/A') : 'N/A' }}</span></td>
+                    <td><span class="label">Designation</span> <span class="value">: {{ $employee ? ($employee->designation->name ?? 'N/A') : 'N/A' }}</span></td>
                 </tr>
+                @else
                 <tr>
-                    <td><span class="label">Branch</span> <span class="value">: {{ $employee->unit->name ?? 'N/A' }}</span></td>
-                    <td><span class="label">Payment Mode</span> <span class="value">: {{ $payslip->payment_mode ?? ($employee->user_detail->payment_mode ?? 'Bank Transfer') }}</span></td>
+                    <td><span class="label">Deliveries</span> <span class="value">: {{ $payslip->deliveries_count }}</span></td>
+                    <td><span class="label">Rate/Delivery</span> <span class="value">: KES {{ number_format($payslip->rate_per_delivery, 2) }}</span></td>
+                </tr>
+                @endif
+                <tr>
+                    <td><span class="label">Branch</span> <span class="value">: {{ $employee ? ($employee->unit->name ?? 'N/A') : 'Main Branch' }}</span></td>
+                    <td><span class="label">Payment Mode</span> <span class="value">: {{ $payslip->payment_mode ?? ($employee ? ($employee->user_detail->payment_mode ?? 'Bank Transfer') : 'Mobile Money') }}</span></td>
                 </tr>
                  <tr>
-                    <td><span class="label">Bank</span> <span class="value">: {{ $payslip->bank ?? ($employee->user_detail->bank_name ?? 'N/A') }}</span></td>
-                    <td><span class="label">Account No</span> <span class="value">: {{ $payslip->bank_account ?? ($employee->user_detail->bank_account ?? 'N/A') }}</span></td>
+                    <td><span class="label">Bank</span> <span class="value">: {{ $payslip->bank ?? ($employee ? ($employee->user_detail->bank_name ?? 'N/A') : 'N/A') }}</span></td>
+                    <td><span class="label">Account No</span> <span class="value">: {{ $payslip->bank_account ?? ($employee ? ($employee->user_detail->bank_account ?? 'N/A') : 'N/A') }}</span></td>
                 </tr>
             </table>
         </div>
@@ -250,19 +261,19 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td>Basic Pay</td>
+                            <td>{{ $payslip->is_rider ? 'Delivery Pay' : 'Basic Pay' }}</td>
                             <td class="amount-col">{{ number_format($payslip->basic_pay ?? 0, 2) }}</td>
                         </tr>
-                        @foreach($employee->earnings as $earning)
+                        @foreach($payslip->earnings as $earning)
                         <tr>
-                            <td>{{ $earning->earningType->name ?? 'Allowance' }}</td>
+                            <td>{{ $earning->label }}</td>
                             <td class="amount-col">{{ number_format($earning->amount, 2) }}</td>
                         </tr>
                         @endforeach
                         
                         <tr class="total-row">
                             <td>Gross Earnings</td>
-                            <td class="amount-col">KES {{ number_format($payslip->gross_pay ?? (($payslip->basic_pay ?? 0) + $employee->earnings->sum('amount')), 2) }}</td>
+                            <td class="amount-col">KES {{ number_format($payslip->gross_pay ?? 0, 2) }}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -278,36 +289,49 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Statutory Deductions -->
-                        @if(($employee->employee_salary->nssf ?? 0) > 0)
-                        <tr>
-                            <td>NSSF</td>
-                            <td class="amount-col">{{ number_format($employee->employee_salary->nssf, 2) }}</td>
-                        </tr>
-                        @endif
-                        @if(($employee->employee_salary->nhif ?? 0) > 0)
-                        <tr>
-                            <td>NHIF</td>
-                            <td class="amount-col">{{ number_format($employee->employee_salary->nhif, 2) }}</td>
-                        </tr>
-                        @endif
-                        @if(($employee->employee_salary->paye ?? 0) > 0)
-                        <tr>
-                            <td>PAYE (Tax)</td>
-                            <td class="amount-col">{{ number_format($employee->employee_salary->paye, 2) }}</td>
-                        </tr>
+                        @if($payslip->statutoryDeductions)
+                            <!-- Statutory Deductions -->
+                            @if(($payslip->statutoryDeductions->nssf ?? 0) > 0)
+                            <tr>
+                                <td>NSSF</td>
+                                <td class="amount-col">{{ number_format($payslip->statutoryDeductions->nssf, 2) }}</td>
+                            </tr>
+                            @endif
+                            @if(($payslip->statutoryDeductions->nhif ?? 0) > 0)
+                            <tr>
+                                <td>NHIF</td>
+                                <td class="amount-col">{{ number_format($payslip->statutoryDeductions->nhif, 2) }}</td>
+                            </tr>
+                            @endif
+                            @if(($payslip->statutoryDeductions->paye ?? 0) > 0)
+                            <tr>
+                                <td>PAYE (Tax)</td>
+                                <td class="amount-col">{{ number_format($payslip->statutoryDeductions->paye, 2) }}</td>
+                            </tr>
+                            @endif
+                            @if(($payslip->statutoryDeductions->housing_levy ?? 0) > 0)
+                            <tr>
+                                <td>Housing Levy</td>
+                                <td class="amount-col">{{ number_format($payslip->statutoryDeductions->housing_levy, 2) }}</td>
+                            </tr>
+                            @endif
                         @endif
                         
-                        @foreach($employee->deductions as $deduction)
+                        @foreach($payslip->otherDeductions as $deduction)
                         <tr>
-                            <td>{{ $deduction->deductionType->name ?? 'Deduction' }}</td>
+                            <td>
+                                {{ $deduction->label }}
+                                @if($deduction->comment)
+                                <div style="font-size: 8px; font-weight: normal; font-style: italic; color: #d32f2f;">({{ $deduction->comment }})</div>
+                                @endif
+                            </td>
                             <td class="amount-col">{{ number_format($deduction->amount, 2) }}</td>
                         </tr>
                         @endforeach
 
         <tr class="total-row">
                             <td>Total Deductions</td>
-                            <td class="amount-col">KES {{ number_format($payslip->total_deductions ?? ($employee->deductions->sum('amount')), 2) }}</td>
+                            <td class="amount-col">KES {{ number_format($payslip->total_deductions ?? 0, 2) }}</td>
                         </tr>
                     </tbody>
                 </table>

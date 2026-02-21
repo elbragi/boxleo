@@ -8,8 +8,11 @@
         </v-col>
         <v-col cols="auto" class="d-flex align-center">
           <v-btn-group>
-            <v-btn color="primary" prepend-icon="mdi-plus-circle" v-if="isAdmin" @click="showCreatePayrollModal">
+            <v-btn color="primary" prepend-icon="mdi-plus" v-if="isAdmin" @click="openPayrollDialog">
               Generate Payroll
+            </v-btn>
+            <v-btn color="secondary" prepend-icon="mdi-bike" v-if="isAdmin" @click="openRiderDialog">
+              Generate Rider Payroll
             </v-btn>
             <v-btn color="success" prepend-icon="mdi-file-excel" @click="showImportModal">
               Import Excel
@@ -133,16 +136,15 @@
           <template v-slot:item.employee="{ item }">
             <div class="d-flex align-center">
               <v-avatar size="36" class="mr-2">
-
-                <v-img :src="item?.raw?.user?.avatar || '/images/default-avatar.png'" alt="avatar"></v-img>
+                <v-img :src="item?.raw?.is_rider ? '/images/rider-avatar.png' : (item?.raw?.user?.avatar || '/images/default-avatar.png')" alt="avatar"></v-img>
               </v-avatar>
               <div>
-
                 <div class="font-weight-medium">
-                  {{ item?.raw?.user?.firstname || '' }} {{ item?.raw?.user?.lastname || '' }}
+                  {{ item?.raw?.is_rider ? item.raw.rider_name : (item?.raw?.user?.firstname + ' ' + item?.raw?.user?.lastname) }}
                 </div>
-
-                <div class="text-caption text-medium-emphasis">{{ item?.raw?.user?.job_title || '' }}</div>
+                <div class="text-caption text-medium-emphasis">
+                  {{ item?.raw?.is_rider ? 'Rider' : (item?.raw?.user?.job_title || '') }}
+                </div>
               </div>
             </div>
           </template>
@@ -242,16 +244,16 @@
             <v-card-item>
               <template v-slot:prepend>
                 <v-avatar size="40">
-                  <v-img :src="payroll.user.avatar || '/images/default-avatar.png'" alt="User Avatar"></v-img>
+                  <v-img :src="payroll.is_rider ? '/images/rider-avatar.png' : (payroll.user.avatar || '/images/default-avatar.png')" alt="User Avatar"></v-img>
                 </v-avatar>
               </template>
               
               <v-card-title>
-                {{ payroll.user.firstname }} {{ payroll.user.lastname }}
+                {{ payroll.is_rider ? payroll.rider_name : (payroll.user.firstname + ' ' + payroll.user.lastname) }}
               </v-card-title>
               
               <v-card-subtitle>
-                {{ payroll.user.job_title }}
+                {{ payroll.is_rider ? 'Rider' : payroll.user.job_title }}
               </v-card-subtitle>
               
               <template v-slot:append>
@@ -267,12 +269,19 @@
             
             <v-card-text>
               <v-list density="compact" lines="two">
-                <v-list-item>
+                <v-list-item v-if="!payroll.is_rider">
                   <template v-slot:prepend>
                     <v-icon icon="mdi-domain" size="small" color="primary"></v-icon>
                   </template>
                   <v-list-item-title>Department</v-list-item-title>
                   <v-list-item-subtitle>{{ payroll.user.department }}</v-list-item-subtitle>
+                </v-list-item>
+                <v-list-item v-else>
+                  <template v-slot:prepend>
+                    <v-icon icon="mdi-bike" size="small" color="primary"></v-icon>
+                  </template>
+                  <v-list-item-title>Deliveries</v-list-item-title>
+                  <v-list-item-subtitle>{{ payroll.deliveries_count }} @ {{ formatCurrency(payroll.rate_per_delivery) }}</v-list-item-subtitle>
                 </v-list-item>
                 
                 <v-list-item>
@@ -599,7 +608,165 @@
         </v-card>
       </v-dialog>
   
-      <!-- Import Excel Dialog -->
+      <!-- Generate Rider Payroll Dialog -->
+      <v-dialog v-model="riderDialog" max-width="900px">
+        <v-card>
+          <v-card-title class="text-h5 bg-secondary text-white">
+            Generate Rider Payroll
+            <v-spacer></v-spacer>
+            <v-btn icon="mdi-close" variant="text" color="white" @click="riderDialog = false"></v-btn>
+          </v-card-title>
+          
+          <v-card-text class="pt-4">
+            <v-form @submit.prevent="submitRiderPayroll" ref="riderPayrollForm">
+              <v-row>
+                <v-col cols="12" md="6">
+                  <v-autocomplete
+                    v-model="riderPayrollForm.rider"
+                    :items="riderList"
+                    item-title="name"
+                    label="Select Rider"
+                    variant="outlined"
+                    return-object
+                    :rules="[v => !!v || 'Rider is required']"
+                    required
+                    @update:model-value="onRiderSelect"
+                  ></v-autocomplete>
+                </v-col>
+                <v-col cols="12" md="3">
+                  <v-text-field
+                    v-model="riderPayrollForm.start_date"
+                    label="Start Date"
+                    type="date"
+                    variant="outlined"
+                    :rules="[v => !!v || 'Required']"
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="12" md="3">
+                  <v-text-field
+                    v-model="riderPayrollForm.end_date"
+                    label="End Date"
+                    type="date"
+                    variant="outlined"
+                    :rules="[v => !!v || 'Required']"
+                  ></v-text-field>
+                </v-col>
+              </v-row>
+
+              <v-row>
+                <v-col cols="12" md="4">
+                  <v-text-field
+                    v-model.number="riderPayrollForm.deliveries"
+                    label="Number of Deliveries"
+                    type="number"
+                    variant="outlined"
+                    :rules="[v => v >= 0 || 'Invalid value']"
+                    @input="calculateRiderTotals"
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="12" md="4">
+                  <v-text-field
+                    v-model.number="riderPayrollForm.rate"
+                    label="Rate per Delivery"
+                    type="number"
+                    variant="outlined"
+                    prefix="Ksh"
+                    readonly
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="12" md="4">
+                  <v-select
+                    v-model="riderPayrollForm.payment_mode"
+                    :items="['Mobile Money', 'Bank Transfer', 'Cash']"
+                    label="Payment Mode"
+                    variant="outlined"
+                  ></v-select>
+                </v-col>
+              </v-row>
+
+              <v-divider class="my-4"></v-divider>
+              
+              <!-- Rider Earnings Section -->
+              <div class="d-flex justify-space-between align-center mb-2">
+                <h3 class="text-h6">Additional Earnings</h3>
+                <v-btn size="small" color="primary" variant="text" prepend-icon="mdi-plus" @click="addRiderEarning">
+                  Add Earning
+                </v-btn>
+              </div>
+              
+              <v-row v-for="(earning, index) in riderPayrollForm.earnings" :key="`rider-earning-${index}`" class="mb-1">
+                <v-col cols="12" md="5">
+                  <v-text-field v-model="earning.label" label="Earning Type" variant="outlined" density="comfortable" hide-details></v-text-field>
+                </v-col>
+                <v-col cols="12" md="5">
+                  <v-text-field v-model.number="earning.amount" label="Amount" type="number" variant="outlined" density="comfortable" prefix="ksh" hide-details @input="calculateRiderTotals"></v-text-field>
+                </v-col>
+                <v-col cols="12" md="2">
+                  <v-btn icon="mdi-delete" variant="text" color="error" @click="removeRiderEarning(index)" class="mt-2"></v-btn>
+                </v-col>
+              </v-row>
+
+              <v-divider class="my-4"></v-divider>
+              
+              <!-- Rider Deductions Section -->
+              <div class="d-flex justify-space-between align-center mb-2">
+                <h3 class="text-h6">Deductions</h3>
+                <v-btn size="small" color="primary" variant="text" prepend-icon="mdi-plus" @click="addRiderDeduction">
+                  Add Deduction
+                </v-btn>
+              </div>
+              
+              <v-row v-for="(deduction, index) in riderPayrollForm.deductions" :key="`rider-deduction-${index}`" class="mb-1">
+                <v-col cols="12" md="4">
+                  <v-text-field v-model="deduction.label" label="Deduction Type" variant="outlined" density="comfortable" hide-details></v-text-field>
+                </v-col>
+                <v-col cols="12" md="3">
+                  <v-text-field v-model.number="deduction.amount" label="Amount" type="number" variant="outlined" density="comfortable" prefix="ksh" hide-details @input="calculateRiderTotals"></v-text-field>
+                </v-col>
+                <v-col cols="12" md="3">
+                  <v-text-field v-model="deduction.comment" label="Comment (Why?)" variant="outlined" density="comfortable" hide-details></v-text-field>
+                </v-col>
+                <v-col cols="12" md="2">
+                  <v-btn icon="mdi-delete" variant="text" color="error" @click="removeRiderDeduction(index)" class="mt-2"></v-btn>
+                </v-col>
+              </v-row>
+
+              <!-- Rider Summary Section -->
+              <v-card variant="outlined" class="mt-4 pa-4 bg-grey-lighten-4">
+                <div class="d-flex justify-space-between mb-2">
+                  <div class="text-subtitle-1">Basic Pay (Deliveries):</div>
+                  <div class="text-subtitle-1">{{ formatCurrency(riderPayrollForm.deliveries * riderPayrollForm.rate) }}</div>
+                </div>
+                <div class="d-flex justify-space-between mb-2">
+                  <div class="text-subtitle-1">Gross Pay:</div>
+                  <div class="text-subtitle-1">{{ formatCurrency(calculateRiderGrossPay) }}</div>
+                </div>
+                <div class="d-flex justify-space-between mb-2 text-error">
+                  <div class="text-subtitle-1 font-weight-medium">5% Tax:</div>
+                  <div class="text-subtitle-1 font-weight-medium">-{{ formatCurrency(calculateRiderTax) }}</div>
+                </div>
+                <div class="d-flex justify-space-between mb-2">
+                  <div class="text-subtitle-1">Total Deductions:</div>
+                  <div class="text-subtitle-1">{{ formatCurrency(calculateRiderTotalDeductions) }}</div>
+                </div>
+                <v-divider class="my-3"></v-divider>
+                <div class="d-flex justify-space-between">
+                  <div class="text-h6 font-weight-bold">Net Pay:</div>
+                  <div class="text-h6 font-weight-bold text-secondary">{{ formatCurrency(calculateRiderNetPay) }}</div>
+                </div>
+              </v-card>
+            </v-form>
+          </v-card-text>
+          
+          <v-card-actions class="pa-4">
+            <v-spacer></v-spacer>
+            <v-btn variant="outlined" color="grey" @click="riderDialog = false">Cancel</v-btn>
+            <v-btn variant="elevated" color="secondary" :loading="isSubmitting" @click="submitRiderPayroll">
+              Generate Rider Payroll
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
       <v-dialog v-model="importDialog" max-width="500px">
         <v-card>
           <v-card-title class="text-h5 bg-success text-white">
@@ -682,7 +849,7 @@
                   <v-list-item>
                     <v-list-item-title>Name</v-list-item-title>
                     <v-list-item-subtitle class="font-weight-bold">
-                      {{ currentPayslip.user.firstname }} {{ currentPayslip.user.lastname }}
+                      {{ currentPayslip.is_rider ? currentPayslip.rider_name : (currentPayslip.user.firstname + ' ' + currentPayslip.user.lastname) }}
                     </v-list-item-subtitle>
                   </v-list-item>
                   
@@ -698,9 +865,13 @@
                     <v-list-item-subtitle>{{ currentPayslip.user.department }}</v-list-item-subtitle>
                   </v-list-item>
                   
-                  <v-list-item>
+                  <v-list-item v-if="!currentPayslip.is_rider">
                     <v-list-item-title>Designation</v-list-item-title>
                     <v-list-item-subtitle>{{ currentPayslip.user.job_title }}</v-list-item-subtitle>
+                  </v-list-item>
+                  <v-list-item v-else>
+                    <v-list-item-title>Type</v-list-item-title>
+                    <v-list-item-subtitle>Rider</v-list-item-subtitle>
                   </v-list-item>
                 </v-list>
               </v-col>
@@ -740,7 +911,25 @@
                     </v-chip>
                   </v-list-item-subtitle>
                 </v-list-item>
+                
+                <v-list-item v-if="currentPayslip.is_rider">
+                  <v-list-item-title>Period Range</v-list-item-title>
+                  <v-list-item-subtitle>{{ formatDate(currentPayslip.start_date) }} - {{ formatDate(currentPayslip.end_date) }}</v-list-item-subtitle>
+                </v-list-item>
               </v-list>
+            </v-col>
+          </v-row>
+          
+          <v-row v-if="currentPayslip.is_rider">
+            <v-col cols="12">
+              <h5 class="text-h6 mb-2">Delivery Details</h5>
+              <v-card variant="outlined" class="pa-3">
+                <div class="d-flex justify-space-between align-center">
+                  <span>Number of Deliveries: <strong>{{ currentPayslip.deliveries_count }}</strong></span>
+                  <span>Rate per Delivery: <strong>{{ formatCurrency(currentPayslip.rate_per_delivery) }}</strong></span>
+                  <span>Total Delivery Pay: <strong>{{ formatCurrency(currentPayslip.basic_pay) }}</strong></span>
+                </div>
+              </v-card>
             </v-col>
           </v-row>
 
@@ -784,8 +973,11 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="(deduction, index) in currentPayslip.deductions" :key="index">
-                    <td>{{ deduction.type }}</td>
+                  <tr v-for="(deduction, index) in currentPayslip.other_deductions" :key="index">
+                    <td>
+                      {{ deduction.label }}
+                      <div v-if="deduction.comment" class="text-caption text-error">{{ deduction.comment }}</div>
+                    </td>
                     <td class="text-right">{{ formatCurrency(deduction.amount) }}</td>
                   </tr>
                   <tr class="bg-grey-lighten-4">
@@ -1020,6 +1212,44 @@ export default {
       selectedPayrollId: null,
       selectedFile: null,
       
+      // Rider data
+      riderDialog: false,
+      riderList: [
+        { name: 'JULIUS SHIYONZO', isCBD: false },
+        { name: 'Sheldon Mulama', isCBD: false },
+        { name: 'Kennedy Ofuona', isCBD: false },
+        { name: 'Lenox Otieno', isCBD: false },
+        { name: 'Joseph Munyao', isCBD: false },
+        { name: 'Eric Ofuona', isCBD: false },
+        { name: 'Meshack Wambua', isCBD: false },
+        { name: 'Onesmus Mutuku', isCBD: true },
+        { name: 'Kennedy Mbila', isCBD: true },
+        { name: 'STANLEY NGURE', isCBD: true },
+        { name: 'MARTIN GITONGA', isCBD: true },
+        { name: 'Dennis Mutunga', isCBD: false },
+        { name: 'Erick Mbithi', isCBD: false },
+        { name: 'Leonard Buthelezi', isCBD: false },
+        { name: 'Samuel Wambua', isCBD: false },
+        { name: 'Harman Omondi', isCBD: false },
+        { name: 'MESHACK MUTISYA', isCBD: false },
+        { name: 'NYAKUNDI HESBON', isCBD: false },
+        { name: 'Kelvin Mulei', isCBD: false },
+        { name: 'MICHAEL MUMO', isCBD: false },
+        { name: 'Godfrey Ouko', isCBD: false },
+        { name: 'Kevin Atuke', isCBD: false },
+        { name: 'John Barack', isCBD: false },
+        { name: 'Fredrick Omondi', isCBD: false },
+        { name: 'Polycarp Juma', isCBD: false },
+        { name: 'Morris Muriuki', isCBD: false },
+        { name: 'Calvince Ogutu', isCBD: false },
+        { name: 'Emanuel Kiprotich', isCBD: false },
+        { name: 'Joseph Wainaina', isCBD: false },
+        { name: 'Zedekia Ngari', isCBD: false },
+        { name: 'Benedict Murila', isCBD: false },
+        { name: 'Duncan Yavan', isCBD: false }
+      ],
+      riderSearch: '',
+      
       // Filter options
       showSuccessDialog: false,
       lastGeneratedId: null,
@@ -1043,6 +1273,19 @@ export default {
         bank_account: '',
         earnings: [],
         deductions: [],
+      },
+
+      riderPayrollForm: {
+        rider: null,
+        deliveries: 0,
+        rate: 136.50,
+        start_date: null,
+        end_date: null,
+        payment_mode: 'Mobile Money',
+        earnings: [],
+        deductions: [],
+        month: new Date().getMonth() + 1,
+        year: new Date().getFullYear(),
       },
       
       emailForm: {
@@ -1294,6 +1537,26 @@ export default {
     calculateNetPay() {
       return this.calculateGrossPay - this.calculateTotalDeductions;
     },
+
+    calculateRiderGrossPay() {
+      const basic = (this.riderPayrollForm.deliveries || 0) * (this.riderPayrollForm.rate || 0);
+      const earnings = this.riderPayrollForm.earnings.reduce((total, e) => total + (parseFloat(e.amount) || 0), 0);
+      return basic + earnings;
+    },
+
+    calculateRiderTax() {
+      // 5% tax on gross pay
+      return this.calculateRiderGrossPay * 0.05;
+    },
+
+    calculateRiderTotalDeductions() {
+      const otherDeductions = this.riderPayrollForm.deductions.reduce((total, d) => total + (parseFloat(d.amount) || 0), 0);
+      return otherDeductions + this.calculateRiderTax;
+    },
+
+    calculateRiderNetPay() {
+      return this.calculateRiderGrossPay - this.calculateRiderTotalDeductions;
+    },
   },
   
   methods: {
@@ -1342,10 +1605,117 @@ export default {
     },
     
     // Payroll CRUD methods
-    showCreatePayrollModal() {
-      this.resetPayrollForm();
+    openPayrollDialog() {
       this.selectedPayrollId = null;
+      this.resetPayrollForm();
       this.payrollDialog = true;
+    },
+
+    openRiderDialog() {
+      this.resetRiderForm();
+      this.riderDialog = true;
+    },
+
+    resetRiderForm() {
+      const now = new Date();
+      const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay() + 1)).toISOString().split('T')[0];
+      const endOfWeek = new Date(now.setDate(now.getDate() - now.getDay() + 7)).toISOString().split('T')[0];
+
+      this.riderPayrollForm = {
+        rider: null,
+        deliveries: 0,
+        rate: 136.50,
+        start_date: startOfWeek,
+        end_date: endOfWeek,
+        payment_mode: 'Mobile Money',
+        earnings: [],
+        deductions: [],
+        month: new Date().getMonth() + 1,
+        year: new Date().getFullYear(),
+      };
+    },
+
+    onRiderSelect(rider) {
+      if (rider) {
+        this.riderPayrollForm.rate = rider.isCBD ? 157.50 : 136.50;
+      }
+    },
+
+    addRiderEarning() {
+      this.riderPayrollForm.earnings.push({ label: '', amount: 0 });
+    },
+
+    removeRiderEarning(index) {
+      this.riderPayrollForm.earnings.splice(index, 1);
+    },
+
+    addRiderDeduction() {
+      this.riderPayrollForm.deductions.push({ label: '', amount: 0, comment: '' });
+    },
+
+    removeRiderDeduction(index) {
+      this.riderPayrollForm.deductions.splice(index, 1);
+    },
+
+    calculateRiderTotals() {
+      // Logic handled by computed properties
+    },
+
+    async submitRiderPayroll() {
+      try {
+        const { valid } = await this.$refs.riderPayrollForm.validate();
+        if (!valid) return;
+
+        this.isSubmitting = true;
+        
+        // Handle rider name robustly (could be object or string if typed)
+        let name = 'Unknown Rider';
+        if (this.riderPayrollForm.rider) {
+          name = typeof this.riderPayrollForm.rider === 'object' 
+            ? this.riderPayrollForm.rider.name 
+            : this.riderPayrollForm.rider;
+        }
+
+        const data = {
+          is_rider: true,
+          rider_name: name,
+          deliveries_count: this.riderPayrollForm.deliveries || 0,
+          rate_per_delivery: this.riderPayrollForm.rate || 0,
+          start_date: this.riderPayrollForm.start_date,
+          end_date: this.riderPayrollForm.end_date,
+          basic_pay: (this.riderPayrollForm.deliveries * this.riderPayrollForm.rate) || 0,
+          gross_pay: this.calculateRiderGrossPay || 0,
+          total_deductions: this.calculateRiderTotalDeductions || 0,
+          net_pay: this.calculateRiderNetPay || 0,
+          month: this.riderPayrollForm.month || (new Date().getMonth() + 1),
+          year: this.riderPayrollForm.year || new Date().getFullYear(),
+          payment_mode: this.riderPayrollForm.payment_mode || 'Mobile Money',
+          earnings: this.riderPayrollForm.earnings || [],
+          // Include the automatic 5% tax in the deductions sent to DB
+          deductions: [
+            ...this.riderPayrollForm.deductions,
+            { label: '5% Tax', amount: this.calculateRiderTax, comment: 'Automatic 5% tax on gross pay' }
+          ],
+          pay_date: new Date().toISOString().split('T')[0],
+        };
+
+        const response = await axios.post('/api/v1/payrolls', data);
+        
+        if (response.data.payroll) {
+          this.lastGeneratedId = response.data.payroll.id;
+          this.showSuccessDialog = true;
+        }
+        
+        this.showNotification('Rider payroll generated successfully', 'success');
+        await this.fetchPayrolls();
+        this.riderDialog = false;
+      } catch (error) {
+        console.error('Error submitting rider payroll:', error);
+        const errorMsg = error.response?.data?.message || 'Failed to generate rider payroll';
+        this.showNotification(errorMsg, 'error');
+      } finally {
+        this.isSubmitting = false;
+      }
     },
     
     editPayroll(id) {
@@ -1369,7 +1739,8 @@ export default {
     },
     
     async submitPayroll() {
-      if (this.$refs.payrollForm.validate()) {
+      const { valid } = await this.$refs.payrollForm.validate();
+      if (valid) {
         this.isSubmitting = true;
         
         // Calculate totals
@@ -1537,15 +1908,15 @@ export default {
       }, 1000);
     },
     
-    downloadPayslip(id) {
+    async downloadPayslip(id) {
       if (!id) id = this.selectedPayrollId;
       if (!id) return;
+      this.showNotification('Starting download...', 'info');
       window.open(`/print-payslip/${id}?download=1`, '_blank');
-      this.showNotification('Preparing payslip download...', 'success');
     },
     
     // Import/Export methods
-    showImportModal() {
+    importExcel() {
       this.selectedFile = null;
       this.importDialog = true;
     },
@@ -1577,9 +1948,9 @@ export default {
     
     // Utility methods
     formatCurrency(value) {
-      return new Intl.NumberFormat('en-US', {
+      return new Intl.NumberFormat('en-KE', {
         style: 'currency',
-        currency: 'USD',
+        currency: 'KES',
         minimumFractionDigits: 2,
       }).format(value);
     },
@@ -1603,7 +1974,8 @@ export default {
     },
     
     calculateTotalAllowances(payroll) {
-      return payroll.earnings ? payroll.earnings.reduce((total, earning) => total + earning.amount, 0) : 0;
+      if (!payroll.earnings) return 0;
+      return payroll.earnings.reduce((total, earning) => total + (parseFloat(earning.amount) || 0), 0);
     },
     
     getPaymentStatusColor(status) {

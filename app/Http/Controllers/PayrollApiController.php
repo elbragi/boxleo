@@ -25,9 +25,9 @@ class PayrollApiController extends Controller
      */
     public function index()
     {
-        //
-        return Payslip::with('user')->get(); // return payslips with user info
-
+        return Payslip::with(['user', 'earnings', 'otherDeductions'])
+            ->orderBy('created_at', 'desc')
+            ->get();
     }
 
     // /**
@@ -44,7 +44,13 @@ class PayrollApiController extends Controller
     public function store(Request $request)
     {
         $validatedData = $request->validate([
-            'user_id' => 'required|exists:users,id',
+            'user_id' => 'nullable|exists:users,id',
+            'is_rider' => 'nullable|boolean',
+            'rider_name' => 'nullable|string',
+            'deliveries_count' => 'nullable|integer',
+            'rate_per_delivery' => 'nullable|numeric',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date',
             'basic_pay' => 'required|numeric',
             'gross_pay' => 'required|numeric',
             'total_deductions' => 'required|numeric',
@@ -56,13 +62,36 @@ class PayrollApiController extends Controller
             'bank_branch' => 'nullable|string',
             'bank_account' => 'nullable|string',
             'pay_date' => 'nullable|date',
+            'earnings' => 'nullable|array',
+            'deductions' => 'nullable|array',
         ]);
 
         $payslip = Payslip::create($validatedData);
 
+        // Save earnings
+        if ($request->has('earnings')) {
+            foreach ($request->earnings as $earning) {
+                $payslip->earnings()->create([
+                    'label' => $earning['label'] ?? $earning['earning_type']['label'] ?? 'Earning',
+                    'amount' => $earning['amount'],
+                ]);
+            }
+        }
+
+        // Save other deductions
+        if ($request->has('deductions')) {
+            foreach ($request->deductions as $deduction) {
+                $payslip->otherDeductions()->create([
+                    'label' => $deduction['label'] ?? $deduction['deduction_type']['label'] ?? 'Deduction',
+                    'amount' => $deduction['amount'],
+                    'comment' => $deduction['comment'] ?? null,
+                ]);
+            }
+        }
+
         return response()->json([
             'message' => 'Payroll generated and saved successfully',
-            'payroll' => $payslip->load('user'),
+            'payroll' => $payslip->load('user', 'earnings', 'otherDeductions'),
         ], 201);
     }
 
