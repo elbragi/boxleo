@@ -504,8 +504,8 @@ class LeaveApiController extends Controller
 
       switch ($leave->status) {
         case 'Pending':
-          // Only Country Manager (designation_id === 1) or HR can approve initial request
-          if ($approver->designation_id === 1 || ($approver->is_hr === 1 && $approver->department_id === 1)) {
+          // Only Country Manager (designation_id === 1) or HR or users with specific permission can approve initial request
+          if ($approver->designation_id === 1 || ($approver->is_hr === 1 && $approver->department_id === 1) || $approver->hasPermissionTo('approve_leave_applications')) {
             
             // DEDUCT BALANCE HERE (First Approval)
             $this->deductLeaveBalance($leave);
@@ -523,7 +523,7 @@ class LeaveApiController extends Controller
               $this->notifyNextApprover($leave, 'HR');
             }
           } else {
-            return response()->json(['error' => 'Unauthorized - Only Country Manager or HR can approve initial requests'], 403);
+            return response()->json(['error' => 'Unauthorized - Only Country Manager, HR or authorized approvers can approve initial requests'], 403);
           }
           break;
 
