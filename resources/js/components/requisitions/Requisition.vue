@@ -648,6 +648,7 @@ export default {
         { title: "Department", value: "user.department.name" },
         { title: "Requester", value: "user.firstname" },
         { title: "Status", value: "status" },
+        { title: "Paid At", value: "paid_at" },
         // { title: "Comments", value: "comment" },
         { title: "Type", value: "approver_type" },
         {

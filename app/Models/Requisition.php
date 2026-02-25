@@ -68,6 +68,8 @@ class Requisition extends Model
         return $this->hasMany(RequisitionLog::class, 'requisition_id');
     }
 
-
-   
+    public function getPaidAtAttribute($value)
+    {
+        return $value ? Carbon::parse($value)->format('Y-m-d H:i:s') : null;
+    }
 }
