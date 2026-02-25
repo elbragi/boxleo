@@ -98,9 +98,13 @@ class AttendanceApiController extends Controller
             $totalCreditedDays = $presentDays + $exemptedDays;
             
             $rating = $workingDaysMTD > 0 ? min(round(($totalCreditedDays / $workingDaysMTD) * 100, 2), 100) : 0;
+
+            // Absent Days Calculation
+            $absentDays = max($workingDaysMTD - $totalCreditedDays, 0);
             
             $attendance->user->setAttribute('monthly_rating', $rating);
             $attendance->user->setAttribute('monthly_late_days', $lateDays);
+            $attendance->user->setAttribute('monthly_absent_days', $absentDays);
         }
 
         $totalEmployees = User::whereNull('deleted_at')

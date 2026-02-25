@@ -183,6 +183,12 @@
                 </v-chip>
               </template>
 
+              <template v-slot:item.user.monthly_absent_days="{ item }">
+                <v-chip :color="item.user.monthly_absent_days >= 5 ? 'red' : (item.user.monthly_absent_days >= 2 ? 'orange' : 'blue-grey')" variant="outlined" size="small">
+                  {{ item.user.monthly_absent_days }} Days
+                </v-chip>
+              </template>
+
               <template v-slot:item.actions="{ item }">
 
                 <v-tooltip bottom>
@@ -347,6 +353,7 @@ export default {
         { title: 'Time Out ', key: 'clock_out_time' },
         { title: 'Presence Rating', key: 'user.monthly_rating' },
         { title: 'Late Days', key: 'user.monthly_late_days' },
+        { title: 'Absent Days', key: 'user.monthly_absent_days' },
         { title: 'Action', key: 'actions' },
       ],
 
