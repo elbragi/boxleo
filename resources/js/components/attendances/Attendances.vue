@@ -398,7 +398,7 @@ export default {
       addNotesModal: false,
       filters: {
         country_id: null,
-        attendance_date: null,
+        attendance_date: new Date().toISOString().split('T')[0],
         user_id: null,
         attendance_type: null,
         status: null
@@ -481,12 +481,26 @@ export default {
       }
     },
 
-    async fetchAttendances() {
+    getPreviousWorkDay(dateStr) {
+      const date = new Date(dateStr + 'T00:00:00');
+      date.setDate(date.getDate() - 1);
+      // Skip Sundays (0 = Sunday)
+      while (date.getDay() === 0) {
+        date.setDate(date.getDate() - 1);
+      }
+      return date.toISOString().split('T')[0];
+    },
+
+    async fetchAttendances(isRetry = false) {
       this.loading = true;
       const apiUrl = this.base_url + 'api/v1/attendances';
+      const params = {};
+      if (this.filters.attendance_date) {
+        params.attendance_date = this.filters.attendance_date;
+      }
 
       try {
-        const response = await axios.get(apiUrl);
+        const response = await axios.get(apiUrl, { params });
         const data = response.data;
 
         this.attendances = data.attendances.map(attendance => ({
@@ -497,11 +511,16 @@ export default {
           }
         }));
 
+        // If no data for today and this is the first attempt, fall back to previous working day
+        if (this.attendances.length === 0 && !isRetry && this.filters.attendance_date) {
+          this.filters.attendance_date = this.getPreviousWorkDay(this.filters.attendance_date);
+          return this.fetchAttendances(true);
+        }
+
         // Extract and assign additional data
         this.averagePresencePercentage = data.average_presence_percentage;
         this.averageClockInTime = data.average_clock_in_time;
         this.averageClockOutTime = data.average_clock_out_time;
-        // this.averageWorkingHours = data.average_working_hours;
 
         await this.fetchAttendanceMetrics();
 
