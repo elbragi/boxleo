@@ -27,6 +27,7 @@ class AttendanceApiController extends Controller
                 $query->where('unit_id', $unit_id)
                     ->whereNull('deleted_at');
             })
+            ->orderBy('attendance_date', 'desc')
             ->orderBy('created_at', 'desc');
 
         $this->applyFilters($request, $query);
