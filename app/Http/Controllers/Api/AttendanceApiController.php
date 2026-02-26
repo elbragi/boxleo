@@ -34,6 +34,13 @@ class AttendanceApiController extends Controller
 
         $attendances = $query->take(2000)->get();
 
+        // If filtering by 'Absent', replace with synthetic absent records
+        $isAbsentFilter = $request->input('status') === 'Absent';
+        if ($isAbsentFilter) {
+            $filterDate = $request->input('attendance_date', date('Y-m-d'));
+            $attendances = $this->getAbsentEmployees($unit_id, $filterDate);
+        }
+
         // Optimized Monthly Rating Calculation
         $now = now();
         $startOfMonth = $now->copy()->startOfMonth();
@@ -380,9 +387,63 @@ class AttendanceApiController extends Controller
             $query->whereHas('user', fn($userQuery) => $userQuery->where('unit_id', $request->unit_id));
         }
 
-        if ($request->has('status')) {
+        // Only apply status filter for non-Absent statuses (Absent is handled separately in index)
+        if ($request->has('status') && $request->status !== 'Absent') {
             $query->where('status', $request->status);
         }
+    }
+
+    /**
+     * Get absent employees for a specific date (employees with no attendance record).
+     */
+    private function getAbsentEmployees($unit_id, $date)
+    {
+        // Get all active employees in the unit
+        $allEmployees = User::where('unit_id', $unit_id)
+            ->whereNull('deleted_at')
+            ->where('super_admin', 0)
+            ->with('unit', 'department')
+            ->get();
+
+        // Get user IDs who DO have attendance on this date
+        $presentUserIds = Attendance::whereDate('attendance_date', $date)
+            ->whereHas('user', function ($q) use ($unit_id) {
+                $q->where('unit_id', $unit_id)->whereNull('deleted_at');
+            })
+            ->pluck('user_id')
+            ->unique()
+            ->toArray();
+
+        // Get user IDs who are on approved leave covering this date
+        $onLeaveUserIds = Leave::where('status', 'Approved')
+            ->where('from', '<=', $date)
+            ->where('to', '>=', $date)
+            ->pluck('user_id')
+            ->unique()
+            ->toArray();
+
+        // Absent = employees who are neither present nor on approved leave
+        $absentEmployees = $allEmployees->filter(function ($user) use ($presentUserIds, $onLeaveUserIds) {
+            return !in_array($user->id, $presentUserIds) && !in_array($user->id, $onLeaveUserIds);
+        });
+
+        // Build synthetic attendance records for absent employees
+        $absentRecords = [];
+        foreach ($absentEmployees as $user) {
+            $synthetic = new Attendance([
+                'user_id' => $user->id,
+                'attendance_date' => $date,
+                'clock_in_time' => '00:00:00',
+                'clock_out_time' => '00:00:00',
+                'status' => 'Absent',
+                'is_present' => false,
+            ]);
+            $synthetic->id = 0; // Synthetic ID
+            $synthetic->setRelation('user', $user);
+            $absentRecords[] = $synthetic;
+        }
+
+        return collect($absentRecords);
     }
 
     private function calculateAttendanceStatistics($attendances, $totalEmployees)
