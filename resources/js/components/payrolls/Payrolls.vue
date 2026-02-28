@@ -1617,21 +1617,17 @@ export default {
     },
 
     resetRiderForm() {
-      const now = new Date();
-      const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay() + 1)).toISOString().split('T')[0];
-      const endOfWeek = new Date(now.setDate(now.getDate() - now.getDay() + 7)).toISOString().split('T')[0];
-
       this.riderPayrollForm = {
         rider: null,
         deliveries: 0,
         rate: 136.50,
-        start_date: startOfWeek,
-        end_date: endOfWeek,
+        start_date: '2026-02-21',
+        end_date: '2026-02-27',
         payment_mode: 'Mobile Money',
         earnings: [],
         deductions: [],
-        month: new Date().getMonth() + 1,
-        year: new Date().getFullYear(),
+        month: 2,
+        year: 2026,
       };
     },
 
@@ -1998,7 +1994,7 @@ export default {
     },
     
     showNotification(text, color = 'success') {
-      this.nackbar = {
+      this.snackbar = {
         show: true,
         text,
         color
