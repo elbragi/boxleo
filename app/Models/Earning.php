@@ -12,11 +12,11 @@ class Earning extends Model
 
 
     protected $fillable = [
-        // 'payslip_id',
+        'payslip_id',
         // 'title',
         // 'user_id',
         'label',
-        // 'amount',
+        'amount',
         'is_taxable',
         'is_recurring',
         'frequency',
