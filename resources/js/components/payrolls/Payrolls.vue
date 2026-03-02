@@ -1246,7 +1246,8 @@ export default {
         { name: 'Joseph Wainaina', isCBD: false },
         { name: 'Zedekia Ngari', isCBD: false },
         { name: 'Benedict Murila', isCBD: false },
-        { name: 'Duncan Yavan', isCBD: false }
+        { name: 'Duncan Yavan', isCBD: false },
+        { name: 'Nicholas Amenya', isCBD: false }
       ],
       riderSearch: '',
       
