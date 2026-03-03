@@ -18,6 +18,12 @@
                         <span>Dashboard</span>
                     </a>
                 </li>
+                <li>
+                    <a href="/holidays">
+                        <i class="la la-calendar-check-o"></i>
+                        <span>Smart Calendar</span>
+                    </a>
+                </li>
                 <li class="submenu">
                     <a href="javascript:void(0);" data-toggle="collapse" data-target="#apps-menu"><i
                             class="la la-cube"></i>
@@ -172,6 +178,12 @@
             <ul class="navigation-menu">
                 <li>
                     <a href="/dashboard"><i class="la la-dashboard"></i> <span>Dashboard</span></a>
+                </li>
+                <li>
+                    <a href="/holidays">
+                        <i class="la la-calendar-check-o"></i>
+                        <span>Smart Calendar</span>
+                    </a>
                 </li>
                 <li class="submenu">
                     <a href="javascript:void(0);" data-toggle="collapse" data-target="#my-account-menu">

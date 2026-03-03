@@ -1,13 +1,20 @@
 <template>
   <v-card class="gradient-card">
     <v-card-item>
-      <v-card-title class="gradient-title">
-        Dashboard
-      </v-card-title>
+      <div class="d-flex justify-space-between align-center">
+        <div>
+          <v-card-title class="gradient-title">
+            Dashboard
+          </v-card-title>
 
-      <v-card-subtitle class="gradient-subtitle">
-        Welcome Back, {{ user.firstname }}!
-      </v-card-subtitle>
+          <v-card-subtitle class="gradient-subtitle">
+            Welcome Back, {{ user.firstname }}!
+          </v-card-subtitle>
+        </div>
+        <v-btn color="white" prepend-icon="mdi-calendar-multiselect" href="/holidays" class="elevation-2">
+          Smart Calendar
+        </v-btn>
+      </div>
     </v-card-item>
     <v-card-text>
       <v-row>
@@ -89,7 +96,44 @@
             </v-card-text>
           </v-card>
         </v-col>
-        <v-col cols="12" lg="5" class="text-center">
+        <v-col cols="12" lg="5">
+          <v-card class="glass-morphism rounded-xl elevation-4 mb-4 border-light overflow-hidden">
+            <v-card-title class="d-flex justify-space-between align-center px-4 py-3 bg-light-primary">
+              <div class="d-flex align-center">
+                <v-icon color="primary" class="mr-2">mdi-calendar-star</v-icon>
+                <span class="text-subtitle-1 font-weight-bold primary--text">Smart Calendar</span>
+              </div>
+              <v-btn icon="mdi-open-in-new" variant="tonal" color="primary" size="x-small" href="/holidays" class="rounded-lg"></v-btn>
+            </v-card-title>
+            
+            <div class="pa-4 d-flex justify-center bg-white-translucent">
+              <VCalendar borderless transparent mini :attributes="calendarAttributes" class="mini-calendar custom-mini-calendar" />
+            </div>
+            
+            <v-divider></v-divider>
+            
+            <div class="pa-3 bg-light-slate">
+              <div class="text-caption font-weight-bold grey--text mb-2 px-2">UPCOMING EVENTS</div>
+              <v-list dense bg-color="transparent" class="pa-0">
+                <v-list-item v-for="item in upcomingEvents" :key="item.id" class="upcoming-event-item mb-2 rounded-lg pa-2">
+                  <template v-slot:prepend>
+                    <div class="mini-date-badge mr-3">
+                      <div class="text-tiny font-weight-bold primary--text">{{ new Date(item.date).toLocaleString('default', { month: 'short' }) }}</div>
+                      <div class="text-subtitle-2 font-weight-black">{{ new Date(item.date).getDate() }}</div>
+                    </div>
+                  </template>
+                  <v-list-item-title class="text-caption font-weight-bold primary--text d-flex align-center">
+                    <span class="truncate">{{ item.name }}</span>
+                  </v-list-item-title>
+                  <v-list-item-subtitle class="text-tiny grey--text">
+                    {{ getCategory(item.name).label }}
+                  </v-list-item-subtitle>
+                </v-list-item>
+              </v-list>
+              
+              <v-btn v-if="upcomingEvents.length === 0" variant="text" block disabled class="text-caption">No upcoming events</v-btn>
+            </div>
+          </v-card>
           <v-card class="animated-card gradient-card mb-4">
             <GenderChart />
           </v-card>
@@ -217,6 +261,7 @@ export default {
       recentAttendances: [],
       recentLeaves: [],
       newEmployees: [],
+      holidays: [],
     };
   },
   mounted() {
@@ -224,6 +269,7 @@ export default {
     this.fetchLeaves();
     this.fetchUsers();
     this.fetchAttendaces();
+    this.fetchHolidays();
   },
   methods: {
     getStatusColor(status) {
@@ -302,8 +348,52 @@ export default {
       } else {
         return 'red';
       }
+    },
+    fetchHolidays() {
+      axios.get('/api/v1/holidays')
+        .then(response => {
+          this.holidays = response.data.holidays || response.data || [];
+        });
+    },
+    formatDate(date) {
+      return new Date(date).toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+    },
+    getEventColor(name) {
+      const lower = name.toLowerCase();
+      if (lower.includes('birthday')) return '#9C27B0';
+      if (lower.includes('meeting')) return '#2196F3';
+      if (lower.includes('training')) return '#3F51B5';
+      if (lower.includes('holiday') || lower.includes('day')) return '#FF5252';
+      return '#FF9800';
+    },
+    getCategory(name) {
+      const lower = name.toLowerCase();
+      if (lower.includes('birthday')) return { key: 'birthdays', label: 'Birthdays', color: '#9C27B0' };
+      if (lower.includes('meeting')) return { key: 'meetings', label: 'Meetings', color: '#2196F3' };
+      if (lower.includes('training')) return { key: 'training', label: 'Training', color: '#3F51B5' };
+      if (lower.includes('holiday') || lower.includes('day')) return { key: 'holidays', label: 'Holidays', color: '#FF5252' };
+      return { key: 'other', label: 'Other', color: '#FF9800' };
     }
   },
+  computed: {
+    calendarAttributes() {
+      return this.holidays.map(h => ({
+        key: h.id,
+        highlight: {
+          color: this.getEventColor(h.name),
+          fillMode: 'light',
+        },
+        dates: new Date(h.date),
+      }));
+    },
+    upcomingEvents() {
+      const today = new Date();
+      return this.holidays
+        .filter(h => new Date(h.date) >= today)
+        .sort((a, b) => new Date(a.date) - new Date(b.date))
+        .slice(0, 3);
+    }
+  }
 };
 </script>
 
@@ -360,5 +450,76 @@ export default {
 
 .v-divider {
   background-color: #e0e0e0;
+}
+
+/* Premium Dashboard Styles */
+.glass-morphism {
+    background: rgba(255, 255, 255, 0.7) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.border-light {
+    border: 1px solid #f1f5f9 !important;
+}
+
+.bg-light-primary {
+    background-color: rgba(var(--v-theme-primary), 0.05) !important;
+}
+
+.bg-white-translucent {
+    background-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.bg-light-slate {
+    background-color: #f8fafc;
+}
+
+.mini-date-badge {
+    min-width: 40px;
+    height: 40px;
+    background: white;
+    border-radius: 10px;
+    display: flex;
+    flex-column;
+    justify-content: center;
+    align-items: center;
+    line-height: 1.1;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.text-tiny {
+    font-size: 0.65rem !important;
+}
+
+.upcoming-event-item {
+    background: white !important;
+    border: 1px solid #f1f5f9;
+    transition: all 0.2s ease;
+}
+
+.upcoming-event-item:hover {
+    transform: translateX(4px);
+    border-color: rgba(var(--v-theme-primary), 0.3);
+}
+
+.custom-mini-calendar :deep(.vc-pane-container) {
+    background: transparent !important;
+}
+
+.custom-mini-calendar :deep(.vc-header) {
+    margin-bottom: 8px;
+}
+
+.custom-mini-calendar :deep(.vc-title) {
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 </style>

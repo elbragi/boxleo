@@ -62,7 +62,6 @@ Route::group(['middleware' => ['guest']], function () {
 
 // Admin routes
 Route::middleware(['role:admin'])->group(function () {
-    Route::get('/holidays', [HolidayController::class, 'index']);
     Route::get('/departments', [DepartmentController::class, 'index']);
     Route::get('/branches', [UnitController::class, 'index']);
     Route::get('/offices', [OfficeController::class, 'index']);
@@ -160,6 +159,7 @@ Route::middleware(['role:employee'])->group(function () {
 
 // shared auth routes
 Route::group(['middleware' => ['auth']], function () {
+    Route::get('/holidays', [HolidayController::class, 'index']);
     Route::get('/announcements', [AnnouncementController::class, 'index']);
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/account', [UserAccountController::class, 'index'])->name('profile');

@@ -12,5 +12,5 @@
 @endsection
 
 @section('content')
-    <holidays />
+    <holidays :user="{{ json_encode($user) }}" />
 @endsection
