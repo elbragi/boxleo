@@ -514,51 +514,6 @@ export default {
     getPreviousMonth() {
       const now = new Date();
       const previousMonth = new Date(now.getFullYear(), now.getMonth() - 1);
-
-      // Format as "Month Year", e.g., "July 2024"
-      const month = previousMonth.toLocaleString('default', { month: 'long' });
-      const year = previousMonth.getFullYear();
-
-      return `${month} ${year}`;
-    },
-    fetchUsers() {
-      const apiUrl = this.base_url + `api/v1/users`;
-      axios.get(apiUrl)
-        .then(response => {
-          this.users = response.data.users.map(user => ({
-            ...user,
-            fullname: `${user.firstname} ${user.lastname}`,
-          }));
-
-          this.hods = this.users.filter(user => user.is_hod === 1);
-          this.managers = this.users.filter(user => user.designation_id === 1);
-        })
-        .catch(error => {
-          console.error('Error fetching users:', error);
-        });
-    },
-    fetchLeaveTypes() {
-      const apiUrl = this.base_url + `api/v1/leave-types`;
-      axios.get(apiUrl)
-        .then(response => {
-          this.leaveTypes = response.data.leaveTypes;
-        })
-        .catch(error => {
-          console.error('Error fetching leave Types:', error);
-        });
-    },
-    fetchDashboardStatistics() {
-      axios
-        .get(`/api/v1/dashboard/${this.user.id}`)
-        .then((response) => {
-          this.statistics = response.data;
-          this.hr = response.data.hr;
-        })
-  },
-  methods: {
-    getPreviousMonth() {
-      const now = new Date();
-      const previousMonth = new Date(now.getFullYear(), now.getMonth() - 1);
       const month = previousMonth.toLocaleString('default', { month: 'long' });
       const year = previousMonth.getFullYear();
       return `${month} ${year}`;
@@ -601,6 +556,14 @@ export default {
     },
     submitNewLeave() {
       if (this.$refs.createLeaveForm.validate()) {
+        const requestedDays = parseFloat(this.newLeave.days);
+        const availableBalance = parseFloat(this.statistics.leaveBalance);
+
+        if (requestedDays > availableBalance) {
+          this.$toastr.warning(`You cannot apply for ${requestedDays} days. Your available balance is only ${availableBalance} days.`, "Insufficient Balance");
+          return;
+        }
+
         this.isLoading = true;
         const formData = new FormData();
         formData.append('user_id', this.user.id);

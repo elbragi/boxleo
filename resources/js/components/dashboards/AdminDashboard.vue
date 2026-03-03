@@ -481,7 +481,7 @@ export default {
     background: white;
     border-radius: 10px;
     display: flex;
-    flex-column;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     line-height: 1.1;
