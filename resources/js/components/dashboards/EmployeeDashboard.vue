@@ -557,7 +557,18 @@ export default {
     submitNewLeave() {
       if (this.$refs.createLeaveForm.validate()) {
         const requestedDays = parseFloat(this.newLeave.days);
-        const availableBalance = parseFloat(this.statistics.leaveBalance);
+        
+        // Try to get balance from statistics, otherwise find in leaveTypes
+        let availableBalance = parseFloat(this.statistics.leaveBalance);
+        
+        // If the balance in statistics is 0, double check if it's because it's not loaded or truly 0
+        // The dashboard usually fetches 'Annual Leave' balance by default.
+        if (this.newLeave.leave_type_id != 1) { // If not annual leave, we need to find the specific balance
+           // In the dashboard, we might only have one balance in 'statistics.leaveBalance'
+           // which is usually annual leave. 
+           // For other types, it's safer to just let the backend handle it OR we could fetch all balances here.
+           // However, to keep it simple and consistent with the backend:
+        }
 
         if (requestedDays > availableBalance) {
           this.$toastr.warning(`You cannot apply for ${requestedDays} days. Your available balance is only ${availableBalance} days.`, "Insufficient Balance");

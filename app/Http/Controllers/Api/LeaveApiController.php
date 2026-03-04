@@ -278,18 +278,28 @@ class LeaveApiController extends Controller
     }
 
     // Check leave balance before allowing application
+    $leaveType = LeaveType::find($request->leave_type_id);
+    if (!$leaveType) {
+      Log::error('Leave type not found', ['leave_type_id' => $request->leave_type_id]);
+      return response()->json(['error' => 'Leave type not found.'], 404);
+    }
+
     $userLeaveBalance = LeaveBalance::where('user_id', $request->user_id)
       ->where('leave_type_id', $request->leave_type_id)
       ->first();
 
-    if ($userLeaveBalance && $leaveDays > $userLeaveBalance->balance) {
+    // Use specific balance if found, otherwise use default from leave type
+    $availableBalance = $userLeaveBalance ? $userLeaveBalance->balance : $leaveType->days;
+
+    if ($leaveDays > $availableBalance) {
       Log::warning('Insufficient leave balance', [
         'user_id' => $request->user_id,
         'requested_days' => $leaveDays,
-        'available_balance' => $userLeaveBalance->balance,
+        'available_balance' => $availableBalance,
+        'is_new_record' => !$userLeaveBalance
       ]);
       return response()->json([
-        'error' => "Insufficient leave balance. You requested {$leaveDays} days but only have {$userLeaveBalance->balance} days available."
+        'error' => "Insufficient leave balance. You requested {$leaveDays} days but only have {$availableBalance} days available."
       ], 400);
     }
 

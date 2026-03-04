@@ -741,13 +741,22 @@ export default {
 
       // Check leave balance before submitting
       const selectedBalance = this.leaveBalances.find(
-        b => b.leave_type_id === this.newLeave.leave_type_id
+        b => b.leave_type_id == this.newLeave.leave_type_id
       );
+      
+      let availableBalance = 0;
+      if (selectedBalance) {
+        availableBalance = parseFloat(selectedBalance.balance);
+      } else {
+        const leaveType = this.leaveTypes.find(lt => lt.id == this.newLeave.leave_type_id);
+        availableBalance = leaveType ? parseFloat(leaveType.days) : 0;
+      }
+
       const requestedDays = parseFloat(this.newLeave.days);
 
-      if (selectedBalance && requestedDays > parseFloat(selectedBalance.balance)) {
+      if (requestedDays > availableBalance) {
         this.$toastr.warning(
-          `You cannot apply for ${requestedDays} days. Your available balance is only ${selectedBalance.balance} days.`,
+          `You cannot apply for ${requestedDays} days. Your available balance is only ${availableBalance} days.`,
           'Insufficient Leave Balance'
         );
         return;
