@@ -277,6 +277,22 @@ class LeaveApiController extends Controller
       return response()->json(['error' => 'The number of leave days does not match the provided days.'], 400);
     }
 
+    // Check leave balance before allowing application
+    $userLeaveBalance = LeaveBalance::where('user_id', $request->user_id)
+      ->where('leave_type_id', $request->leave_type_id)
+      ->first();
+
+    if ($userLeaveBalance && $leaveDays > $userLeaveBalance->balance) {
+      Log::warning('Insufficient leave balance', [
+        'user_id' => $request->user_id,
+        'requested_days' => $leaveDays,
+        'available_balance' => $userLeaveBalance->balance,
+      ]);
+      return response()->json([
+        'error' => "Insufficient leave balance. You requested {$leaveDays} days but only have {$userLeaveBalance->balance} days available."
+      ], 400);
+    }
+
     $managerUser = User::find($request->manager);
 
     if (!$managerUser) {

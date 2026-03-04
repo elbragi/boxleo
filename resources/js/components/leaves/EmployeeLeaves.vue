@@ -504,6 +504,7 @@ export default {
       selectedLeave: {},
       createLeaveModal: false,
       isNewLeaveMode: true,
+      leaveBalances: [],
     };
   },
   computed: {
@@ -538,6 +539,7 @@ export default {
     this.fetchLeaves();
     this.fetchUsers();
     this.fetchLeaveTypes();
+    this.fetchLeaveBalances();
   },
   methods: {
     formatDate(date) {
@@ -721,10 +723,33 @@ export default {
       }
     },
 
+    fetchLeaveBalances() {
+      axios.get(`/api/v1/leave-balances?user_ids=${this.userId}`)
+        .then(response => {
+          this.leaveBalances = response.data.leaveBalances || [];
+        })
+        .catch(error => {
+          console.error('Error fetching leave balances:', error);
+        });
+    },
     // Fixed submitNewLeave method
     submitNewLeave() {
       if (!this.$refs.createLeaveForm.validate()) {
         this.$toastr.error('Please fill in all required fields correctly');
+        return;
+      }
+
+      // Check leave balance before submitting
+      const selectedBalance = this.leaveBalances.find(
+        b => b.leave_type_id === this.newLeave.leave_type_id
+      );
+      const requestedDays = parseFloat(this.newLeave.days);
+
+      if (selectedBalance && requestedDays > parseFloat(selectedBalance.balance)) {
+        this.$toastr.warning(
+          `You cannot apply for ${requestedDays} days. Your available balance is only ${selectedBalance.balance} days.`,
+          'Insufficient Leave Balance'
+        );
         return;
       }
 
