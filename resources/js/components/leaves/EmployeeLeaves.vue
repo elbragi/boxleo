@@ -733,8 +733,9 @@ export default {
         });
     },
     // Fixed submitNewLeave method
-    submitNewLeave() {
-      if (!this.$refs.createLeaveForm.validate()) {
+    async submitNewLeave() {
+      const { valid } = await this.$refs.createLeaveForm.validate();
+      if (!valid) {
         this.$toastr.error('Please fill in all required fields correctly');
         return;
       }
