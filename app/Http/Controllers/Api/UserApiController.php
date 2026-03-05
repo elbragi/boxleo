@@ -36,7 +36,7 @@ class UserApiController extends Controller
                     );
             });
     
-        } elseif ($authUser->designation_id === 1) {
+        } elseif ($authUser->designation_id === 1 || $authUser->designation_id === 16) {
             $managerDeptIds = $authUser->managerDepartments->pluck('id');
             $query->where(function($q) use ($managerDeptIds, $authUser) {
                 // users in the manager’s departments, or anyone in same unit
@@ -65,7 +65,7 @@ class UserApiController extends Controller
             'user'         => $authUser,
             'team'         => $team,
             'is_hod'       => $authUser->is_hod,
-            'is_manager'   => $authUser->designation_id === 1,
+            'is_manager'   => ($authUser->designation_id === 1 || $authUser->designation_id === 16),
         ]);
     }
 
@@ -332,7 +332,7 @@ class UserApiController extends Controller
             'view_employee_panel',
           ];
 
-          if ($roleName == 'employee' && $request->designation_id == 1) {
+          if ($roleName == 'employee' && ($request->designation_id == 1 || $request->designation_id == 16)) {
             array_push($permissions, 'view_team_leaves');
           }
           break;
@@ -383,7 +383,7 @@ class UserApiController extends Controller
           'view_employee_panel',
         ];
 
-        if ($user->designation_id == 1) {
+        if ($user->designation_id == 1 || $user->designation_id == 16) {
           array_push($permissions, 'view_team_leaves');
         }
         break;
@@ -571,7 +571,7 @@ public function update(Request $request, User $user)
             'view_employee_panel',
           ];
 
-          if ($user->designation_id == 1) {
+          if ($user->designation_id == 1 || $user->designation_id == 16) {
             $permissions[] = 'view_team_leaves';
           }
           break;

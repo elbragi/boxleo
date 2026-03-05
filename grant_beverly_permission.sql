@@ -1,0 +1,1 @@
+INSERT IGNORE INTO model_has_permissions (permission_id, model_type, model_id) SELECT p.id, 'App\\Models\\User', u.id FROM permissions p CROSS JOIN users u WHERE p.name = 'view_team_leaves' AND u.firstname LIKE '%Beverly%' AND u.lastname LIKE '%Awinja%' AND u.deleted_at IS NULL; SELECT ROW_COUNT() as permission_rows_inserted;

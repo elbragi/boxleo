@@ -275,7 +275,7 @@ export default {
           }));
 
           this.hods = this.users.filter(user => user.is_hod === 1);
-          this.managers = this.users.filter(user => user.designation_id === 1);
+          this.managers = this.users.filter(user => user.designation_id === 1 || user.designation_id === 16);
 
           console.log("HODs: ", this.hods);
           console.log("Managers: ", this.managers);
