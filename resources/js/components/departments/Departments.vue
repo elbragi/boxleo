@@ -217,6 +217,7 @@ export default {
         name: "",
       },
       managers: [],
+      users: [],
       employees: [],
       manager_id: '',
       employee_id: '',
@@ -274,8 +275,8 @@ export default {
             fullname: `${user.firstname} ${user.lastname}`,
           }));
 
-          this.hods = this.users.filter(user => user.is_hod === 1);
-          this.managers = this.users.filter(user => user.designation_id === 1 || user.designation_id === 16);
+          this.hods = this.users.filter(user => user.is_hod == 1);
+          this.managers = this.users.filter(user => user.designation_id == 1 || user.designation_id == 16);
 
           console.log("HODs: ", this.hods);
           console.log("Managers: ", this.managers);

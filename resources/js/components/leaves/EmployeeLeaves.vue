@@ -587,7 +587,7 @@ export default {
           }));
 
           this.hods = this.users.filter(user => user.is_hod === 1);
-          this.managers = this.users.filter(user => user.designation_id === 1 || user.designation_id === 16);
+          this.managers = this.users.filter(user => user.designation_id == 1 || user.designation_id == 16);
           // Find users in the same department as the logged-in user
           //   this.followers = this.users.filter(user =>
           //         // user.department_id === this.user.department_id &&
