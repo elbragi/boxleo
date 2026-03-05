@@ -732,19 +732,13 @@ export default {
           console.error('Error fetching leave balances:', error);
         });
     },
-    // Fixed submitNewLeave method
-    async submitNewLeave() {
-      const { valid } = await this.$refs.createLeaveForm.validate();
-      if (!valid) {
-        this.$toastr.error('Please fill in all required fields correctly');
-        return;
-      }
-
+    submitNewLeave() {
       // Check leave balance before submitting
+
       const selectedBalance = this.leaveBalances.find(
         b => b.leave_type_id == this.newLeave.leave_type_id
       );
-      
+
       let availableBalance = 0;
       if (selectedBalance) {
         availableBalance = parseFloat(selectedBalance.balance);
@@ -757,7 +751,7 @@ export default {
 
       if (requestedDays > availableBalance) {
         this.$toastr.warning(
-          `You cannot apply for ${requestedDays} days. Your available balance is only ${availableBalance} days.`,
+          `You only have ${availableBalance} day(s) available. You cannot apply for ${requestedDays} days.`,
           'Insufficient Leave Balance'
         );
         return;
@@ -766,7 +760,6 @@ export default {
       this.isLoading = true;
       const formData = new FormData();
 
-      // Append basic fields
       formData.append('user_id', this.userId);
       formData.append('leave_type_id', this.newLeave.leave_type_id);
       formData.append('from', this.newLeave.from);
@@ -777,13 +770,10 @@ export default {
       formData.append('hod', this.newLeave.hod);
       formData.append('comment', this.newLeave.comment || '');
 
-      // Handle file upload
       if (this.newLeave.document && this.newLeave.document instanceof File) {
-        console.log('Appending file:', this.newLeave.document.name);
         formData.append('document', this.newLeave.document);
       }
 
-      // Handle delegated tasks - filter out empty tasks
       const validTasks = this.newLeave.delegatedTasks.filter(task =>
         task.assignee_id && task.task_description && task.task_description.trim()
       );
@@ -792,22 +782,7 @@ export default {
         formData.append('delegatedTasks', JSON.stringify(validTasks));
       }
 
-      // Debug FormData contents
-      console.log('FormData contents:');
-      for (let pair of formData.entries()) {
-        if (pair[1] instanceof File) {
-          console.log(pair[0] + ': ', `File - ${pair[1].name} (${pair[1].size} bytes)`);
-        } else {
-          console.log(pair[0] + ': ', pair[1]);
-        }
-      }
-
-      axios.post('/api/v1/leaves', formData, {
-        // headers: {
-        //   'Content-Type': 'multipart/form-data',
-        // },
-        // timeout: 30000, // 30 second timeout
-      })
+      axios.post('/api/v1/leaves', formData)
         .then(response => {
           this.fetchLeaves();
           this.isLoading = false;
@@ -817,16 +792,11 @@ export default {
         })
         .catch(error => {
           this.isLoading = false;
-          console.error('Submit error:', error);
-
           if (error.response && error.response.data) {
             if (error.response.data.errors) {
-              // Handle validation errors
               const errors = error.response.data.errors;
               Object.keys(errors).forEach(key => {
-                errors[key].forEach(message => {
-                  this.$toastr.error(message);
-                });
+                errors[key].forEach(message => this.$toastr.error(message));
               });
             } else if (error.response.data.error) {
               this.$toastr.error(error.response.data.error);

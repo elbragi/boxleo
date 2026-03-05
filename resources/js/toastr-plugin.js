@@ -11,7 +11,10 @@ ToastrPlugin.install = (Vue) => {
                     toastr.success(message, '', { timeOut: 3000, positionClass: 'toast-top-center' });
                 },
                 error: (message) => {
-                    toastr.error(message, '', { timeOut: 3000, positionClass: 'toast-top-center' });
+                    toastr.error(message, '', { timeOut: 5000, positionClass: 'toast-top-center' });
+                },
+                warning: (message, title) => {
+                    toastr.warning(message, title || '', { timeOut: 6000, positionClass: 'toast-top-center' });
                 },
             };
         },
