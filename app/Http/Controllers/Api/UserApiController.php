@@ -24,37 +24,43 @@ class UserApiController extends Controller
         $query = User::with(['department', 'unit', 'designation']);
     
         // 1) Apply role-based scoping
-        if ($authUser->is_hod) {
+        if ($authUser->hasRole('admin') || $authUser->super_admin) {
+            // Admins can see everyone
+        } elseif ($authUser->is_hod) {
             $hodDeptIds = $authUser->hodDepartments->pluck('id');
             $query->where(function($q) use ($hodDeptIds) {
-                $q->whereHas('managerDepartments', fn($q2) => 
-                        $q2->whereIn('department_id', $hodDeptIds)
-                    )
+                // HODs see all users in their assigned departments
+                $q->whereIn('department_id', $hodDeptIds)
                   ->orWhere(fn($q2) => 
-                        $q2->doesntHave('managerDepartments')
-                           ->where('designation_id', 1) // include standalone managers
+                        $q2->whereHas('managerDepartments', fn($q3) => 
+                            $q3->whereIn('department_id', $hodDeptIds)
+                        )
                     );
             });
     
         } elseif ($authUser->designation_id === 1 || $authUser->designation_id === 16) {
             $managerDeptIds = $authUser->managerDepartments->pluck('id');
             $query->where(function($q) use ($managerDeptIds, $authUser) {
-                // users in the manager’s departments, or anyone in same unit
+                // Managers see users in their departments or anyone in their unit
                 $q->whereIn('department_id', $managerDeptIds)
                   ->orWhere('unit_id', $authUser->unit_id);
             });
     
         } else {
-            // regular user: only themselves
+            // Regular user: ONLY themselves
             $query->where('id', $authUser->id);
         }
     
         // 2) Apply optional filters from the front-end
-        if ($unitFilter) {
-            $query->where('unit_id', $unitFilter);
-        }
-        if ($deptFilter) {
+        // IMPORTANT: If a department filter is applied, we restrict to that department.
+        // The scoping above already ensures they can only filter within what they are allowed to see.
+        // However, we want to make sure if they ARE allowed to see a department, they see ALL employees in it.
+        if ($deptFilter && ($authUser->hasRole('admin') || $authUser->super_admin || $authUser->is_hod || $authUser->designation_id === 1 || $authUser->designation_id === 16)) {
+            // Special case: if they selected a department, let's show all employees in it
+            // assuming they have rights to see it (which is true if they can select it in UI)
             $query->where('department_id', $deptFilter);
+        } elseif ($unitFilter) {
+            $query->where('unit_id', $unitFilter);
         }
     
         // 3) Execute
