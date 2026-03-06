@@ -761,14 +761,19 @@ class AttendanceApiController extends Controller
         // check if there is a holiday in the unit_id = user,unit
         $holiday = Holiday::whereDate('date', $userTime->toDateString())->first();
         $isHoliday = $holiday !== null;
-        $isTraining = $isHoliday && stripos($holiday->name, 'Training') !== false;
+        // Exclude training, orientation, and meetings from lenient holiday threshold
+        $isExemptEvent = $isHoliday && (
+            stripos($holiday->name, 'Training') !== false || 
+            stripos($holiday->name, 'Orientation') !== false || 
+            stripos($holiday->name, 'Meeting') !== false
+        );
 
 
         // Determine which threshold to use based on the day of the week and holidays
         $lateThreshold = '';
         if ($userDayOfWeek === Carbon::SUNDAY) {
             $lateThreshold = $sundayThreshold;
-        } elseif ((in_array($userDayOfWeek, $weekendDays) || $isHoliday) && !$isTraining) {
+        } elseif ((in_array($userDayOfWeek, $weekendDays) || $isHoliday) && !$isExemptEvent) {
             $lateThreshold = $weekendThreshold;
         } else {
             $lateThreshold = $defaultLateThreshold;
@@ -1077,20 +1082,25 @@ class AttendanceApiController extends Controller
         $isWeekend = in_array($userDayOfWeek, $weekendDays);
         $holiday = Holiday::whereDate('date', $userTime->toDateString())->first();
         $isHoliday = $holiday !== null;
-        $isTraining = $isHoliday && stripos($holiday->name, 'Training') !== false;
+        // Exclude training, orientation, and meetings from lenient holiday threshold
+        $isExemptEvent = $isHoliday && (
+            stripos($holiday->name, 'Training') !== false || 
+            stripos($holiday->name, 'Orientation') !== false || 
+            stripos($holiday->name, 'Meeting') !== false
+        );
 
         Log::info('isLateFromZkteco day checks', [
             'user_day_of_week' => $userDayOfWeek,
             'is_weekend' => $isWeekend,
             'is_holiday' => $isHoliday,
-            'is_training' => $isTraining,
+            'is_exempt_event' => $isExemptEvent,
             'weekend_days' => $weekendDays,
         ]);
 
         // Check for Sunday specifically
         if ($userDayOfWeek === Carbon::SUNDAY) {
             $lateThreshold = $sundayThreshold;
-        } elseif (($isWeekend || $isHoliday) && !$isTraining) {
+        } elseif (($isWeekend || $isHoliday) && !$isExemptEvent) {
             $lateThreshold = $weekendThreshold;
         } else {
             $lateThreshold = $defaultLateThreshold;
