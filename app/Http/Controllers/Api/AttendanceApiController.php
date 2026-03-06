@@ -759,15 +759,16 @@ class AttendanceApiController extends Controller
         // Check if it's a holiday for the specific date of the clock-in
 
         // check if there is a holiday in the unit_id = user,unit
-        // $isHoliday = Holiday::whereDate('date', $userTime->toDateString())->exists();
-        $isHoliday = Holiday::whereDate('date', $userTime->toDateString())->exists();
+        $holiday = Holiday::whereDate('date', $userTime->toDateString())->first();
+        $isHoliday = $holiday !== null;
+        $isTraining = $isHoliday && stripos($holiday->name, 'Training') !== false;
 
 
         // Determine which threshold to use based on the day of the week and holidays
         $lateThreshold = '';
         if ($userDayOfWeek === Carbon::SUNDAY) {
             $lateThreshold = $sundayThreshold;
-        } elseif (in_array($userDayOfWeek, $weekendDays) || $isHoliday) {
+        } elseif ((in_array($userDayOfWeek, $weekendDays) || $isHoliday) && !$isTraining) {
             $lateThreshold = $weekendThreshold;
         } else {
             $lateThreshold = $defaultLateThreshold;
@@ -1074,19 +1075,22 @@ class AttendanceApiController extends Controller
             : [$unit->weekend_day ?? Carbon::SATURDAY];
 
         $isWeekend = in_array($userDayOfWeek, $weekendDays);
-        $isHoliday = Holiday::whereDate('date', $userTime->toDateString())->exists();
+        $holiday = Holiday::whereDate('date', $userTime->toDateString())->first();
+        $isHoliday = $holiday !== null;
+        $isTraining = $isHoliday && stripos($holiday->name, 'Training') !== false;
 
         Log::info('isLateFromZkteco day checks', [
             'user_day_of_week' => $userDayOfWeek,
             'is_weekend' => $isWeekend,
             'is_holiday' => $isHoliday,
+            'is_training' => $isTraining,
             'weekend_days' => $weekendDays,
         ]);
 
         // Check for Sunday specifically
         if ($userDayOfWeek === Carbon::SUNDAY) {
             $lateThreshold = $sundayThreshold;
-        } elseif ($isWeekend || $isHoliday) {
+        } elseif (($isWeekend || $isHoliday) && !$isTraining) {
             $lateThreshold = $weekendThreshold;
         } else {
             $lateThreshold = $defaultLateThreshold;
