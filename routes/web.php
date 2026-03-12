@@ -198,6 +198,21 @@ Route::group(['middleware' => ['auth']], function () {
         auth()->user()->leaveImpersonation();
         return redirect('/dashboard');
     })->name('impersonate.leave');
+
+    // Web-API Proxies (for session-based auth)
+    Route::prefix('web-api')->group(function () {
+        Route::get('/dashboard-stats', [DashboardController::class, 'stats']);
+        Route::get('/dashboard-stats/{id}', [DashboardController::class, 'userStats']);
+        Route::get('/leaves', [DashboardController::class, 'leaves']);
+        Route::get('/attendances', [DashboardController::class, 'attendances']);
+        Route::get('/users', [DashboardController::class, 'users']);
+        Route::get('/holidays', [DashboardController::class, 'holidays']);
+        Route::get('/attendance-analytics', [DashboardController::class, 'attendanceAnalytics']);
+        Route::get('/departments', [DashboardController::class, 'departments']);
+        Route::get('/agent-performance', [DashboardController::class, 'agentPerformance']);
+        Route::get('/leave-types', [DashboardController::class, 'leaveTypes']);
+        Route::get('/analytics/{id}', [DashboardController::class, 'userAnalytics']);
+    });
 });
 
 // block register route

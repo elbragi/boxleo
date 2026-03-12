@@ -22,7 +22,7 @@ export default {
     methods: {
         async fetchUsersAndRenderChart() {
             try {
-                const response = await axios.get('/api/v1/users');
+                const response = await axios.get('/web-api/users');
                 const users = response.data.users;
                 const maleUsers = users.filter(user => user.gender === 'Male');
                 const femaleUsers = users.filter(user => user.gender === 'Female');

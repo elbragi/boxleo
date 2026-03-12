@@ -1,94 +1,91 @@
 <template>
-    <div>
-        <div id="departmentCountChart"></div>
+  <div class="department-distribution pa-4">
+    <div class="d-flex justify-space-between align-center mb-4">
+      <h3 class="text-subtitle-1 font-weight-bold text-dark-emphasis">Department Distribution</h3>
+      <v-chip size="x-small" color="primary" variant="tonal" class="font-weight-bold">{{ totalEmployees }} Employees</v-chip>
     </div>
+    
+    <div class="distribution-list">
+      <div v-for="(dept, index) in sortedDepartments" :key="dept.id" class="dept-item mb-3">
+        <div class="d-flex justify-space-between align-center mb-1">
+          <span class="dept-name text-caption font-weight-bold">{{ dept.name }}</span>
+          <span class="dept-count text-caption font-weight-black text-primary">{{ dept.users.length }}</span>
+        </div>
+        <v-tooltip location="top">
+          <template v-slot:activator="{ props }">
+            <div v-bind="props" class="progress-wrapper">
+              <v-progress-linear
+                :model-value="getPercentage(dept.users.length)"
+                :color="getDeptColor(index)"
+                height="6"
+                rounded
+                class="slim-progress"
+              ></v-progress-linear>
+            </div>
+          </template>
+          <span>{{ getPercentage(dept.users.length) }}% of workforce</span>
+        </v-tooltip>
+      </div>
+    </div>
+  </div>
 </template>
+
 <script>
-import ApexCharts from 'apexcharts';
 import axios from 'axios';
 
 export default {
-    name: 'EmployeePieChart',
-    mounted() {
-        this.fetchDepartmentsAndRenderChart();
-    },
-    methods: {
-        async fetchDepartmentsAndRenderChart() {
-            try {
-                const response = await axios.get('/api/v1/departments');
-                const departments = response.data.departments;
-                const departmentNames = departments.map(department => department.name);
-                const departmentCountData = departments.map(department => department.users.length);
-                this.renderChart(departmentNames, departmentCountData);
-            } catch (error) {
-                console.error('Error fetching departments:', error);
-            }
-        },
-        renderChart(departmentNames, departmentCountData) {
-            const options = {
-                chart: {
-                    type: 'donut',
-                },
-                labels: departmentNames,
-                series: departmentCountData,
-                legend: {
-                    position: 'bottom',
-                },
-                title: {
-                    text: 'Employee Count by Department',
-                    align: 'center',
-                    margin: 30,
-                    offsetY: -15,
-                    style: {
-                        fontSize: '20px'
-                    }
-                },
-                plotOptions: {
-                    pie: {
-                        startAngle: -90,
-                        endAngle: 270,
-                        donut: {
-                            size: '70%',
-                            background: 'transparent',
-                            labels: {
-                                show: true,
-                                name: {
-                                    show: true,
-                                    fontSize: '22px',
-                                },
-                                value: {
-                                    show: true,
-                                    fontSize: '16px',
-                                    formatter: function (val) {
-                                        return val;
-                                    }
-                                },
-                                total: {
-                                    show: true,
-                                    showAlways: true,
-                                    label: 'Total',
-                                    formatter: function (w) {
-                                        return w.globals.seriesTotals.reduce((a, b) => a + b, 0);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                fill: {
-                    type: 'gradient',
-                },
-                dataLabels: {
-                    enabled: false,
-                },
-                tooltip: {
-                    enabled: true,
-                },
-            };
-
-            const chart = new ApexCharts(document.querySelector('#departmentCountChart'), options);
-            chart.render();
-        }
+  name: 'DepartmentDistribution',
+  data() {
+    return {
+      departments: [],
+      totalEmployees: 0
+    };
+  },
+  mounted() {
+    this.fetchDepartments();
+  },
+  computed: {
+    sortedDepartments() {
+      return [...this.departments].sort((a, b) => b.users.length - a.users.length).slice(0, 6);
     }
+  },
+  methods: {
+    async fetchDepartments() {
+      try {
+        const response = await axios.get('/web-api/departments');
+        this.departments = response.data.departments;
+        this.totalEmployees = this.departments.reduce((acc, dept) => acc + dept.users.length, 0);
+      } catch (error) {
+        console.error('Error fetching departments:', error);
+      }
+    },
+    getPercentage(count) {
+      if (this.totalEmployees === 0) return 0;
+      return Math.round((count / this.totalEmployees) * 100);
+    },
+    getDeptColor(index) {
+      const colors = ['primary', 'info', 'success', 'purple', 'warning', 'error'];
+      return colors[index % colors.length];
+    }
+  }
 }
 </script>
+
+<style scoped>
+.dept-item {
+  transition: transform 0.2s ease;
+}
+.dept-item:hover {
+  transform: translateX(4px);
+}
+.dept-name {
+  color: #475569;
+  letter-spacing: 0.2px;
+}
+.slim-progress {
+  background-color: rgba(0,0,0,0.03);
+}
+.progress-wrapper {
+  cursor: pointer;
+}
+</style>

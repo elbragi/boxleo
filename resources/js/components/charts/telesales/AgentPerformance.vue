@@ -18,7 +18,7 @@ export default {
     },
     methods: {
         fetchData() {
-            axios.get('/api/v1/agent-performance')
+            axios.get('/web-api/agent-performance')
                 .then(response => {
                     this.apiData = response.data;
                     this.renderChart();

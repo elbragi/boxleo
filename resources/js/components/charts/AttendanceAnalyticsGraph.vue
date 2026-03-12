@@ -19,7 +19,7 @@ export default {
     },
     methods: {
         fetchAttendances() {
-            const uri = '/api/v1/attendances';
+            const uri = '/web-api/attendances';
             axios.get(uri)
                 .then(response => {
                     this.attendances = response.data.attendances.map(attendance => ({

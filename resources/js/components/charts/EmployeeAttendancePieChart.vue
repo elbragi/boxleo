@@ -32,7 +32,7 @@ export default {
     methods: {
         async fetchAnalyticsAndRenderChart() {
             try {
-                const response = await axios.get(`/api/v1/analytics/${this.user.id}`);
+                const response = await axios.get(`/web-api/analytics/${this.user.id}`);
                 const data = response.data;
 
                 this.chartData.inTime = data.inTimeAttendances;

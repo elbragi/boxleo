@@ -41,13 +41,13 @@ class Kernel extends ConsoleKernel
             });
 
 
-            $schedule->job(new AddMonthlyLeaveBalance)
+            $schedule->command('app:allocate-leave-days')
             ->monthlyOn(1, '00:00')
             ->onSuccess(function () {
-                Log::info("✅ AddMonthlyLeaveBalance job dispatched successfully on " . now()->toDateTimeString());
+                Log::info("✅ app:allocate-leave-days executed successfully on " . now()->toDateTimeString());
             })
             ->onFailure(function (\Throwable $exception) {
-                Log::error("❌ Failed to dispatch AddMonthlyLeaveBalance job on " . now()->toDateTimeString() . ": " . $exception->getMessage());
+                Log::error("❌ Failed to execute app:allocate-leave-days on " . now()->toDateTimeString() . ": " . $exception->getMessage());
             });
 
 
