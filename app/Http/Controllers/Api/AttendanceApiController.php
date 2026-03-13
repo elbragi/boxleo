@@ -734,7 +734,7 @@ class AttendanceApiController extends Controller
 
         // Set default thresholds
         // It's good practice to ensure these are valid time strings.
-        $defaultLateThreshold = $unit->late_threshold ?? '08:01';
+        $defaultLateThreshold = $unit->late_threshold ?? '08:02';
         $weekendThreshold = $unit->weekend_threshold ?? '08:31';
         // Force 08:31 if set to 08:30 (accounting for potential format differences)
         if (str_starts_with($weekendThreshold, '08:30')) {
@@ -1071,7 +1071,7 @@ class AttendanceApiController extends Controller
             return false;
         }
 
-        $defaultLateThreshold = $unit->late_threshold ?? '08:01';
+        $defaultLateThreshold = $unit->late_threshold ?? '08:02';
         $weekendThreshold = $unit->weekend_threshold ?? '08:31';
         $sundayThreshold = '11:00';
 
