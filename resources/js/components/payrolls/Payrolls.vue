@@ -1239,7 +1239,7 @@ export default {
         { name: 'Kevin Atuke', isCBD: false },
         { name: 'John Barack', isCBD: false },
         { name: 'Fredrick Omondi', isCBD: false },
-        { name: 'Polycarp Juma', isCBD: false },
+        { name: 'Polycarp Juma', isCBD: true },
         { name: 'Morris Muriuki', isCBD: false },
         { name: 'Calvince Ogutu', isCBD: false },
         { name: 'Emanuel Kiprotich', isCBD: false },
