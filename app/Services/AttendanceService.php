@@ -53,10 +53,12 @@ class AttendanceService
     // Check if it's a holiday
     $isHoliday = Holiday::whereDate('date', $userTime->toDateString())->exists();
 
-    // Decide which threshold to use
+    // Determine which threshold to use
     if ($userDayOfWeek === Carbon::SUNDAY) {
         $lateThreshold = $sundayThreshold; // Prefer unit setting, fallback to 11:00
-    } elseif ($isWeekend || $isHoliday) {
+    } elseif ($isWeekend) {
+        $lateThreshold = $weekendThreshold; // Weekends (Sat) always get the lenient threshold
+    } elseif ($isHoliday) {
         $lateThreshold = $weekendThreshold;
     } else {
         $lateThreshold = $defaultLateThreshold;
@@ -118,7 +120,9 @@ class AttendanceService
     // Apply fixed Sunday threshold
     if ($userDayOfWeek === Carbon::SUNDAY) {
         $lateThreshold = $sundayThreshold;
-    } elseif ($isWeekend || $isHoliday) {
+    } elseif ($isWeekend) {
+        $lateThreshold = $weekendThreshold;
+    } elseif ($isHoliday) {
         $lateThreshold = $weekendThreshold;
     } else {
         $lateThreshold = $defaultLateThreshold;

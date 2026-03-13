@@ -773,7 +773,9 @@ class AttendanceApiController extends Controller
         $lateThreshold = '';
         if ($userDayOfWeek === Carbon::SUNDAY) {
             $lateThreshold = $sundayThreshold;
-        } elseif ((in_array($userDayOfWeek, $weekendDays) || $isHoliday) && !$isExemptEvent) {
+        } elseif (in_array($userDayOfWeek, $weekendDays)) {
+            $lateThreshold = $weekendThreshold;
+        } elseif ($isHoliday && !$isExemptEvent) {
             $lateThreshold = $weekendThreshold;
         } else {
             $lateThreshold = $defaultLateThreshold;

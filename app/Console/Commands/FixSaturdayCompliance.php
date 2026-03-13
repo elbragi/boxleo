@@ -15,7 +15,7 @@ class FixSaturdayCompliance extends Command
      *
      * @var string
      */
-    protected $signature = 'fix:saturday-compliance';
+    protected $signature = 'fix:saturday-compliance {--date= : The date to fix (Y-m-d)}';
 
     /**
      * The console command description.
@@ -31,11 +31,11 @@ class FixSaturdayCompliance extends Command
      */
     public function handle(AttendanceService $service)
     {
-        $today = Carbon::today()->toDateString();
-        $this->info("Fixing records for $today...");
-        Log::info("Running FixSaturdayCompliance for $today");
+        $date = $this->option('date') ?: Carbon::today()->toDateString();
+        $this->info("Fixing records for $date...");
+        Log::info("Running FixSaturdayCompliance for $date");
 
-        $attendances = Attendance::whereDate('attendance_date', $today)
+        $attendances = Attendance::whereDate('attendance_date', $date)
                                  ->with(['user.unit'])
                                  ->get();
 
@@ -48,10 +48,16 @@ class FixSaturdayCompliance extends Command
             if (!$clockIn) continue;
             
             // Re-evaluate using the service (which now has the 08:31 logic)
-            // Note: Service expects $clockInTime. If it's H:i:s, Service uses Carbon::parse() which uses today's date.
-            // Since we are only fixing *today's* records, this is acceptable.
+            // Combined with a hard override for Saturdays to be safe
+            $dayOfWeek = Carbon::parse($date)->dayOfWeek;
             
-            $isLate = $service->isLate($clockIn, $user->unit);
+            $isLate = $service->isLate($date . ' ' . $clockIn, $user->unit);
+            
+            // Safety: Force 8:31 for Saturdays even if service has issues
+            if ($dayOfWeek === Carbon::SATURDAY) {
+                $isLate = Carbon::parse($clockIn)->greaterThan(Carbon::parse('08:31:00'));
+            }
+
             $newStatus = $isLate ? 'Late' : 'In Time';
 
             if ($attendance->status !== $newStatus) {
