@@ -1,30 +1,31 @@
 <template>
-  <div class="department-distribution pa-4">
-    <div class="d-flex justify-space-between align-center mb-4">
-      <h3 class="text-subtitle-1 font-weight-bold text-dark-emphasis">Department Distribution</h3>
+  <div class="department-distribution pa-4 d-flex flex-column h-100">
+    <div class="d-flex justify-space-between align-start mb-4">
+      <div>
+        <h3 class="text-subtitle-1 font-weight-bold text-dark-emphasis mb-0">Department Distribution</h3>
+        <p class="text-caption text-medium-emphasis mb-0">Staffing spread across {{ departments.length }} teams</p>
+      </div>
       <v-chip size="x-small" color="primary" variant="tonal" class="font-weight-bold">{{ totalEmployees }} Employees</v-chip>
     </div>
     
-    <div class="distribution-list">
-      <div v-for="(dept, index) in sortedDepartments" :key="dept.id" class="dept-item mb-3">
-        <div class="d-flex justify-space-between align-center mb-1">
-          <span class="dept-name text-caption font-weight-bold">{{ dept.name }}</span>
-          <span class="dept-count text-caption font-weight-black text-primary">{{ dept.users.length }}</span>
-        </div>
-        <v-tooltip location="top">
-          <template v-slot:activator="{ props }">
-            <div v-bind="props" class="progress-wrapper">
-              <v-progress-linear
-                :model-value="getPercentage(dept.users.length)"
-                :color="getDeptColor(index)"
-                height="6"
-                rounded
-                class="slim-progress"
-              ></v-progress-linear>
+    <div class="scrollable-distribution-container pr-2">
+      <div class="distribution-list">
+        <div v-for="(dept, index) in departmentsWithPercentages" :key="dept.id" class="dept-item mb-4">
+          <div class="d-flex justify-space-between align-center mb-1">
+            <span class="dept-name text-caption font-weight-bold">{{ dept.name }}</span>
+            <div class="d-flex align-center">
+              <span class="dept-count text-caption font-weight-black text-primary mr-2">{{ dept.users.length }}</span>
+              <span class="text-xxs text-medium-emphasis">({{ dept.percentage }}%)</span>
             </div>
-          </template>
-          <span>{{ getPercentage(dept.users.length) }}% of workforce</span>
-        </v-tooltip>
+          </div>
+          <v-progress-linear
+            :model-value="dept.percentage"
+            :color="getDeptColor(index)"
+            height="6"
+            rounded
+            class="slim-progress-premium"
+          ></v-progress-linear>
+        </div>
       </div>
     </div>
   </div>
@@ -38,7 +39,8 @@ export default {
   data() {
     return {
       departments: [],
-      totalEmployees: 0
+      totalEmployees: 0,
+      menu: false
     };
   },
   mounted() {
@@ -46,7 +48,16 @@ export default {
   },
   computed: {
     sortedDepartments() {
-      return [...this.departments].sort((a, b) => b.users.length - a.users.length).slice(0, 6);
+      return [...this.departments].sort((a, b) => b.users.length - a.users.length);
+    },
+    topThree() {
+      return this.sortedDepartments.slice(0, 3);
+    },
+    departmentsWithPercentages() {
+      return this.sortedDepartments.map(dept => ({
+        ...dept,
+        percentage: this.getPercentage(dept.users.length)
+      }));
     }
   },
   methods: {
@@ -64,7 +75,7 @@ export default {
       return Math.round((count / this.totalEmployees) * 100);
     },
     getDeptColor(index) {
-      const colors = ['primary', 'info', 'success', 'purple', 'warning', 'error'];
+      const colors = ['#0D8ABC', '#10B981', '#F59E0B', '#8B5CF6', '#3B82F6', '#EF4444'];
       return colors[index % colors.length];
     }
   }
@@ -72,20 +83,53 @@ export default {
 </script>
 
 <style scoped>
+.scrollable-distribution-container {
+  max-height: 280px;
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+/* Custom Scrollbar for premium feel */
+.scrollable-distribution-container::-webkit-scrollbar {
+  width: 4px;
+}
+
+.scrollable-distribution-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 10px;
+}
+
+.scrollable-distribution-container::-webkit-scrollbar-thumb {
+  background: rgba(var(--v-theme-primary), 0.2);
+  border-radius: 10px;
+}
+
+.scrollable-distribution-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--v-theme-primary), 0.4);
+}
+
 .dept-item {
   transition: transform 0.2s ease;
 }
+
 .dept-item:hover {
   transform: translateX(4px);
 }
+
 .dept-name {
   color: #475569;
   letter-spacing: 0.2px;
 }
-.slim-progress {
-  background-color: rgba(0,0,0,0.03);
+
+.slim-progress-premium {
+  background-color: rgba(0,0,0,0.04);
 }
-.progress-wrapper {
-  cursor: pointer;
+
+.text-xxs {
+  font-size: 0.65rem !important;
+}
+
+.tracking-wider {
+  letter-spacing: 1px;
 }
 </style>

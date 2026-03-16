@@ -43,7 +43,11 @@
 
     <v-row class="compact-stats-row" no-gutters>
       <v-col cols="12" sm="6" md="3" v-for="(stat, index) in statistics" :key="index" class="pa-2">
-        <v-card class="glass-card premium-stat-card animate-fade-in-up" :style="{ 'animation-delay': `${0.2 + index * 0.1}s` }">
+        <v-card 
+          class="glass-card premium-stat-card animate-fade-in-up" 
+          :style="{ 'animation-delay': `${0.2 + index * 0.1}s` }"
+          :href="stat.label.toLowerCase() === 'announcements' ? '/announcements' : undefined"
+        >
           <div class="d-flex align-center pa-3">
             <div :class="`icon-glow-box bg-${getStatColor(index)}`" class="mr-3">
               <v-icon :icon="stat.icon" size="18" color="white"></v-icon>

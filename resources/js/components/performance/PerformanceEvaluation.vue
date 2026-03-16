@@ -949,6 +949,16 @@ export default {
       this.editEvaluation.user_id = null;
       this.fetchEmployees();
     },
+    'newEvaluation.evaluation_date'(newDate) {
+      if (this.newEvaluation.user_id) {
+        this.fetchAttendanceScore();
+      }
+    },
+    'editEvaluation.evaluation_date'(newDate) {
+      if (this.editEvaluation.user_id) {
+        this.fetchEditAttendanceScore();
+      }
+    },
   },
   created() {
     this.fetchEvaluations();
@@ -1397,6 +1407,46 @@ export default {
           this.loading = false;
         });
     },
+    fetchAttendanceScore() {
+      const userId = this.newEvaluation.user_id?.id || this.newEvaluation.user_id;
+      if (!userId) return;
+
+      const params = {
+        user_id: userId,
+        evaluation_date: this.newEvaluation.evaluation_date
+      };
+
+      axios.get('/api/v1/performance-evaluations/calculate-attendance-score', { params })
+        .then(response => {
+          if (response.data && response.data.automated_attendance_score !== undefined) {
+            this.newEvaluation.attendance = response.data.automated_attendance_score;
+            this.calculateScores();
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching attendance score:', error);
+        });
+    },
+    fetchEditAttendanceScore() {
+      const userId = this.editEvaluation.user_id?.id || this.editEvaluation.user_id;
+      if (!userId) return;
+
+      const params = {
+        user_id: userId,
+        evaluation_date: this.editEvaluation.evaluation_date
+      };
+
+      axios.get('/api/v1/performance-evaluations/calculate-attendance-score', { params })
+        .then(response => {
+          if (response.data && response.data.automated_attendance_score !== undefined) {
+            this.editEvaluation.attendance = response.data.automated_attendance_score;
+            this.calculateEditScores();
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching edit attendance score:', error);
+        });
+    },
     calculateAverages() {
       const evals = this.evaluations;
       if (!evals.length) {
@@ -1541,20 +1591,26 @@ export default {
       return true;
     },
     updateEmployee(selected) {
+      // selected may be a plain id (number) or an object depending on autocomplete mode
       if (selected && typeof selected === 'object') {
         this.editEvaluation.user_id = selected;
         if (selected.designation_id === 1) {
           this.editEvaluation.reports_submitted = null;
         }
       }
+      // Always fetch attendance score when employee changes
+      this.$nextTick(() => this.fetchEditAttendanceScore());
     },
     updateNewEmployee(selected) {
+      // selected may be a plain id (number) or an object depending on autocomplete mode
       if (selected && typeof selected === 'object') {
         this.newEvaluation.user_id = selected;
         if (selected.designation_id === 1) {
           this.newEvaluation.reports_submitted = null;
         }
       }
+      // Always fetch attendance score when employee changes
+      this.$nextTick(() => this.fetchAttendanceScore());
     },
   }
 };

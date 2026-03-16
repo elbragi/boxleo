@@ -241,6 +241,20 @@ Route::middleware('auth:sanctum')->group(function () {
   Route::get('v1/payrolls', [PayrollApiController::class, 'index']);
   Route::post('v1/payrolls', [PayrollApiController::class, 'store']);
   Route::delete('v1/payrolls/{id}', [PayrollApiController::class, 'destroy']);
+
+  // performance evaluation
+  Route::get('v1/performance-evaluations', [PerformanceApiEvaluation::class, 'index']);
+  Route::post('v1/performance-evaluations', [PerformanceApiEvaluation::class, 'store']);
+  Route::put('v1/performance-evaluations/{id}', [PerformanceApiEvaluation::class, 'update']);
+  Route::delete('v1/performance-evaluations/{id}', [PerformanceApiEvaluation::class, 'destroy']);
+  Route::get('v1/performance-evaluations/filter', [PerformanceApiEvaluation::class, 'filterEvaluations']);
+  Route::get('v1/performance-evaluations/filter-options', [PerformanceApiEvaluation::class, 'getFilterOptions']);
+  Route::get('v1/performance-evaluations/attendance-metrics', [PerformanceApiEvaluation::class, 'attendanceMetrics']);
+  Route::get('v1/performance-evaluations/calculate-attendance-score', [PerformanceApiEvaluation::class, 'getAttendanceScore']);
+
+  // Performance report routes
+  Route::post('v1/performance-reports/export', [PerformanceApiReportController::class, 'exportPerformanceEvaluations']);
+  Route::post('v1/performance-reports/ranked-employees', [PerformanceApiReportController::class, 'exportRankedEmployees']);
 });
 
 Route::post('/v1/test-sms', [LeaveApiController::class, 'testSms']);
@@ -277,19 +291,7 @@ Route::get('/v1/accounts', [RequisitionApiController::class, 'fetchAccounts']);
 
 
 
-// performance evalution
-Route::get('v1/performance-evaluations', [PerformanceApiEvaluation::class, 'index']);
-Route::post('v1/performance-evaluations', [PerformanceApiEvaluation::class, 'store']);
-Route::put('v1/performance-evaluations/{id}', [PerformanceApiEvaluation::class, 'update']);
-Route::delete('v1/performance-evaluations/{id}', [PerformanceApiEvaluation::class, 'destroy']);
-Route::get('v1/performance-evaluations/filter', [PerformanceApiEvaluation::class, 'filterEvaluations']);
-Route::get('v1/performance-evaluations/filter-options', [PerformanceApiEvaluation::class, 'getFilterOptions']);
-Route::get('v1/performance-evaluations/attendance-metrics', [PerformanceApiEvaluation::class, 'attendanceMetrics']);
 
-
-// Performance report routes
-Route::post('v1/performance-reports/export', [PerformanceApiReportController::class, 'exportPerformanceEvaluations']);
-Route::post('v1/performance-reports/ranked-employees', [PerformanceApiReportController::class, 'exportRankedEmployees']);
 
 
 Route::get('v1/payslips/{id}/with-user', [PayrollController::class, 'payslipWithUser']);

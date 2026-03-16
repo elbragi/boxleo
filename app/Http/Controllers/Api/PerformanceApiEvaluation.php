@@ -474,7 +474,7 @@ class PerformanceApiEvaluation extends Controller
             'user_id' => 'required|integer|exists:users,id',
             'unit_id' => 'required|integer|exists:units,id',
             'department_id' => 'required|integer|exists:departments,id',
-            'attendance' => 'required|integer|min:0|max:10',
+            'attendance' => 'required|numeric|min:0|max:10',
             'problems_solved' => 'required|integer|min:0|max:10',
             'knowledge_of_work' => 'required|integer|min:0|max:10',
             'team_work' => 'required|integer|min:0|max:10',
@@ -553,5 +553,48 @@ class PerformanceApiEvaluation extends Controller
 
         $maxPossibleScore = $validFields * 10;
         return $maxPossibleScore > 0 ? round(($total / $maxPossibleScore) * 100, 2) : 0;
+    }
+    /**
+     * Calculate attendance score based on late clock-ins (Internal/API)
+     */
+    public function getAttendanceScore(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|integer|exists:users,id',
+            'evaluation_date' => 'nullable|date',
+            'year' => 'nullable|integer',
+            'month' => 'nullable|integer',
+        ]);
+
+        $userId = $request->user_id;
+        
+        if ($request->has('evaluation_date')) {
+            $date = Carbon::parse($request->evaluation_date);
+            $year = $date->year;
+            $month = $date->month;
+        } else {
+            $year = $request->year ?? now()->year;
+            $month = $request->month ?? now()->month;
+        }
+
+        $startOfMonth = Carbon::createFromDate($year, $month)->startOfMonth();
+        $endOfMonth = Carbon::createFromDate($year, $month)->endOfMonth();
+
+        $lateCount = Attendance::where('user_id', $userId)
+            ->whereBetween('attendance_date', [$startOfMonth, $endOfMonth])
+            ->where('status', 'Late')
+            ->count();
+
+        $baseScore = 10;
+        $deduction = 0.5;
+        $score = max(0, $baseScore - ($lateCount * $deduction));
+
+        return response()->json([
+            'user_id' => $userId,
+            'year' => $year,
+            'month' => $month,
+            'late_count' => $lateCount,
+            'automated_attendance_score' => $score
+        ]);
     }
 }
