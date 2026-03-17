@@ -52,18 +52,21 @@ class AnnouncementPublishedNotification extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
+        $authorName = \App\Models\User::find($this->announcement->author)?->firstname ?? 'Admin';
+        $publishDate = \Carbon\Carbon::parse($this->announcement->publish_date)->format('F j, Y');
+
         return (new MailMessage)
-            ->subject('Important Announcement: ' . $this->announcement->subject)
+            ->from('support@boxleocourier.com', 'Boxleo Support')
+            ->subject('Update: ' . $this->announcement->subject)
             ->greeting('Hello ' . $notifiable->firstname . ',')
-            ->line('A new internal announcement has been posted that requires your attention.')
-            ->line('---')
+            ->line('A new internal announcement has been published by ' . $authorName . ' on ' . $publishDate . '.')
             ->line('**Subject:** ' . $this->announcement->subject)
-            ->line('**Summary:**')
+            ->line('**Description:**')
             ->line($this->announcement->description)
-            ->line('---')
-            ->action('View Full Announcement', url('/announcements'))
+            ->action('View Full Announcement', url('/announcements/'))
             ->line('Stay informed and have a great day!')
-            ->salutation('Regards, ' . config('app.name') . ' Team');
+            ->salutation('Best Regards,')
+            ->line('Boxleo IT Support');
     }
 
     /**
