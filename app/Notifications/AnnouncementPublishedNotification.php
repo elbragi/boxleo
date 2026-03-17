@@ -53,13 +53,17 @@ class AnnouncementPublishedNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('New Announcement Published')
+            ->subject('Important Announcement: ' . $this->announcement->subject)
             ->greeting('Hello ' . $notifiable->firstname . ',')
-            ->line('A new announcement has been published.')
-            ->line('Subject: ' . $this->announcement->subject)
-            ->line('Description: ' . $this->announcement->description)
-            ->action('View Announcement', url('/announcements/' ))
-            ->line('Thank you for staying informed.');
+            ->line('A new internal announcement has been posted that requires your attention.')
+            ->line('---')
+            ->line('**Subject:** ' . $this->announcement->subject)
+            ->line('**Summary:**')
+            ->line($this->announcement->description)
+            ->line('---')
+            ->action('View Full Announcement', url('/announcements'))
+            ->line('Stay informed and have a great day!')
+            ->salutation('Regards, ' . config('app.name') . ' Team');
     }
 
     /**
