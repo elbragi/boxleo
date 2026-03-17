@@ -12,6 +12,8 @@ class AnnouncementPublishedNotification extends Notification
     use Queueable;
 
     protected $announcement;
+    protected $shouldSendMail;
+
 
     /**
      * Create a new notification instance.
@@ -22,9 +24,10 @@ class AnnouncementPublishedNotification extends Notification
     /**
      * Create a new notification instance.
      */
-    public function __construct($announcement)
+    public function __construct($announcement, $shouldSendMail = true)
     {
         $this->announcement = $announcement;
+        $this->shouldSendMail = $shouldSendMail;
     }
 
     /**
@@ -34,7 +37,11 @@ class AnnouncementPublishedNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        $channels = ['database'];
+        if ($this->shouldSendMail) {
+            $channels[] = 'mail';
+        }
+        return $channels;
     }
 
     /**

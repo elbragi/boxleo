@@ -268,6 +268,25 @@
                       chips
                       closable-chips
                     />
+
+                    <!-- Email Forwarding Option -->
+                    <v-divider class="my-6"></v-divider>
+                    <div class="d-flex align-center">
+                      <v-checkbox
+                        v-model="formData.send_email"
+                        color="primary"
+                        label="Forward to Audience Emails"
+                        hide-details
+                        density="compact"
+                        class="send-email-checkbox"
+                      ></v-checkbox>
+                      <v-tooltip location="right">
+                        <template v-slot:activator="{ props }">
+                          <v-icon v-bind="props" size="18" color="medium-emphasis" class="ml-2">mdi-information-outline</v-icon>
+                        </template>
+                        <span>If checked, all members of the target audience will receive an email notification in addition to the dashboard update.</span>
+                      </v-tooltip>
+                    </div>
                   </v-card-text>
                 </v-card>
 
@@ -447,6 +466,7 @@ export default {
       formData: {
         department_ids: [],
         unit_ids: [],
+        send_email: true,
       }
     };
   },
@@ -527,7 +547,7 @@ export default {
       this.editedIndex = -1;
       this.editedAnnouncement = Object.assign({}, this.defaultAnnouncement);
       this.attachments = [];
-      this.formData = { department_ids: [], unit_ids: [] };
+      this.formData = { department_ids: [], unit_ids: [], send_email: true };
       this.showDialog = true;
     },
 
@@ -537,7 +557,8 @@ export default {
 
       this.formData = {
         department_ids: item.departments ? item.departments.map(dept => dept.id) : [],
-        unit_ids: item.units ? item.units.map(unit => unit.id) : []
+        unit_ids: item.units ? item.units.map(unit => unit.id) : [],
+        send_email: true
       };
       this.attachments = []; // Laravel handling of edit attachments varies, usually start fresh or manage existing ones
       this.showDialog = true;
@@ -570,6 +591,7 @@ export default {
       
       this.formData.department_ids.forEach(id => fd.append('department_ids[]', id));
       this.formData.unit_ids.forEach(id => fd.append('unit_ids[]', id));
+      fd.append('send_email', this.formData.send_email ? 1 : 0);
       
       if (this.attachments && this.attachments.length) {
         for (let i = 0; i < this.attachments.length; i++) {

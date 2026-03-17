@@ -161,7 +161,8 @@ class AnnouncementApiController extends Controller
 
             $users = $query->get();
 
-            Notification::send($users, new AnnouncementPublishedNotification($announcement));
+            $sendEmail = filter_var($request->input('send_email'), FILTER_VALIDATE_BOOLEAN);
+            Notification::send($users, new AnnouncementPublishedNotification($announcement, $sendEmail));
         }
 
         if ($request->has('department_ids')) {
@@ -298,10 +299,12 @@ class AnnouncementApiController extends Controller
                 'author_unit_id' => $authorUnitId,
                 'user_count' => $users->count(),
                 'has_department_filters' => $request->has('department_ids'),
-                'has_unit_filters' => $request->has('unit_ids')
+                'has_unit_filters' => $request->has('unit_ids'),
+                'send_email' => $request->input('send_email')
             ]);
 
-            Notification::send($users, new AnnouncementPublishedNotification($announcement));
+            $sendEmail = filter_var($request->input('send_email'), FILTER_VALIDATE_BOOLEAN);
+            Notification::send($users, new AnnouncementPublishedNotification($announcement, $sendEmail));
         }
 
         // Handle attachments (if any)
