@@ -1247,7 +1247,8 @@ export default {
         { name: 'Zedekia Ngari', isCBD: false },
         { name: 'Benedict Murila', isCBD: false },
         { name: 'Duncan Yavan', isCBD: false },
-        { name: 'Nicholas Amenya', isCBD: false }
+        { name: 'Nicholas Amenya', isCBD: false },
+        { name: 'Vitalis Wafula', isCBD: true }
       ],
       riderSearch: '',
       

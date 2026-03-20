@@ -79,9 +79,13 @@
           <v-card-text class="pa-6">
             <div class="d-flex justify-space-between align-start mb-4">
               <v-chip :color="getStatusColor(item)" size="x-small" variant="flat" class="font-weight-black text-uppercase">{{ item.status }}</v-chip>
-              <div v-if="permissions.includes('edit announcement')" class="d-flex gap-1" @click.stop>
-                <v-btn icon="mdi-pencil" variant="tonal" color="primary" size="x-small" class="rounded-lg" @click="editAnnouncement(item)"></v-btn>
-                <v-btn icon="mdi-delete" variant="tonal" color="error" size="x-small" class="rounded-lg ml-2" @click="deleteAnnouncement(item)"></v-btn>
+              <div v-show="permissions.includes('edit announcement')" class="d-flex gap-1" @click.stop>
+                <v-btn variant="tonal" color="primary" size="x-small" class="rounded-lg" @click="editAnnouncement(item)">
+                   <v-icon size="16">mdi-pencil</v-icon>
+                </v-btn>
+                <v-btn variant="tonal" color="error" size="x-small" class="rounded-lg ml-2" @click="deleteAnnouncement(item)">
+                   <v-icon size="16">mdi-delete</v-icon>
+                </v-btn>
               </div>
             </div>
             
