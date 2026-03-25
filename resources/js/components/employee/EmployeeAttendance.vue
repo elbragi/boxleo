@@ -166,16 +166,21 @@ export default {
       );
     },
     getClockIcon() {
-      const currentTime = new Date().getHours();
-      return currentTime < 13 ? 'mdi-clock-in' : 'mdi-clock-out';
+      return this.isClockedInToday ? 'mdi-clock-out' : 'mdi-clock-in';
     },
     getClockColor() {
-      const currentTime = new Date().getHours();
-      return currentTime < 13 ? 'success' : 'error';
+      return this.isClockedInToday ? 'error' : 'success';
     },
     getClockText() {
-      const currentTime = new Date().getHours();
-      return currentTime < 13 ? 'Clock In' : 'Clock Out';
+      return this.isClockedInToday ? 'Clock Out' : 'Clock In';
+    },
+    todayAttendance() {
+      const today = DateTime.now().setZone('Africa/Nairobi').toFormat('ccc dd MMM yyyy');
+      return this.attendances.find(a => a.attendance_date === today);
+    },
+    isClockedInToday() {
+      const att = this.todayAttendance;
+      return !!(att && att.clock_in_time && (att.clock_out_time === '00:00:00' || !att.clock_out_time));
     },
 
   },
@@ -271,11 +276,7 @@ formatTime(date) {
       this.addAttendanceModal = true;
     },
     openClockAction() {
-      const currentTime = new Date().getHours();
-
-      if (currentTime < 9) {
-        this.openAddAttendanceModal('clock_in');
-      } else if (currentTime >= 14) {
+      if (this.isClockedInToday) {
         this.openAddAttendanceModal('clock_out');
       } else {
         this.openAddAttendanceModal('clock_in');
@@ -337,13 +338,16 @@ formatTime(date) {
     isBeyond8AM() {
       const currentTime = new Date();
       const hours = currentTime.getHours();
-      return hours >= 13;
+      const minutes = currentTime.getMinutes();
+      // Threshold 8:15 AM (giving a bit of grace over 8:10)
+      return (hours > 8) || (hours === 8 && minutes > 15);
     },
 
     isBefore5PM() {
       const currentTime = new Date();
       const hours = currentTime.getHours();
-      return hours < 13;
+      // Threshold 4:00 PM (16:00)
+      return hours < 16;
     },
 
     fetchAttendances() {
