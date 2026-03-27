@@ -8,7 +8,7 @@ use App\Http\Requests\UpdateUserEarningRequest;
 use App\Models\UserEarning;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
-use Log;
+use Illuminate\Support\Facades\Log;
 
 class UserEarningController extends Controller
 {

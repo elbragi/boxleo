@@ -916,7 +916,7 @@ class AttendanceApiController extends Controller
         $users = User::whereIn('zk_user_id', $records->pluck('user_id'))->get()->keyBy('zk_user_id');
         Log::info('Users fetched for zk_user_ids', ['user_ids' => $records->pluck('user_id')->unique()->values()->all()]);
 
-        foreach ($records as $record) {
+        foreach ($records->toArray() as $record) {
             $zkUserId = $record['user_id'];
             $user = $users->get($zkUserId);
 

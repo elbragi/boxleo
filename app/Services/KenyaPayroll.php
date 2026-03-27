@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Services\Payroll\Countries;
+namespace App\Services;
 
 use App\Models\User;
-use App\Services\Payroll\PayrollCalculatorInterface;
+use App\Services\PayrollCalculatorInterface;
 use App\Models\StatutoryDeduction;
 use App\Models\OtherDeduction;
 use App\Models\Earning;

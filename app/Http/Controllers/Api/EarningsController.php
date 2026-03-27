@@ -8,9 +8,8 @@ use Illuminate\Http\Request;
 use App\Http\Requests\StoreEarningRequest;
 use App\Http\Requests\UpdateEarningRequest;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
-
-
 
 class EarningsController extends Controller
 {
@@ -45,11 +44,11 @@ class EarningsController extends Controller
     public function store(StoreEarningRequest $request): JsonResponse
     {
         try {
-            \Log::info('Creating earning with data:', $request->validated());
+            Log::info('Creating earning with data:', $request->validated());
 
             $earning = Earning::create($request->validated());
 
-            \Log::info('Earning created successfully:', ['id' => $earning->id]);
+            Log::info('Earning created successfully:', ['id' => $earning->id]);
 
             return response()->json([
                 'success' => true,
@@ -57,7 +56,7 @@ class EarningsController extends Controller
                 'message' => 'Earning created successfully'
             ], 201);
         } catch (\Exception $e) {
-            \Log::error('Error creating earning:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            Log::error('Error creating earning:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
 
             return response()->json([
                 'success' => false,
@@ -100,7 +99,7 @@ class EarningsController extends Controller
             'message' => 'Earning updated successfully',
         ]);
     } catch (\Exception $e) {
-        \Log::error('Earning update failed', [
+        Log::error('Earning update failed', [
             'id' => $earning->id,
             'error' => $e->getMessage(),
         ]);

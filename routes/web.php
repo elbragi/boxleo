@@ -200,7 +200,7 @@ Route::group(['middleware' => ['auth']], function () {
     })->name('impersonate.leave');
 
     // Web-API Proxies (for session-based auth)
-    Route::prefix('web-api')->group(function () {
+    Route::group(['prefix' => 'web-api'], function () {
         Route::get('/dashboard-stats', [DashboardController::class, 'stats']);
         Route::get('/dashboard-stats/{id}', [DashboardController::class, 'userStats']);
         Route::get('/leaves', [DashboardController::class, 'leaves']);

@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use App\Http\Requests\StoreDeductionRequest;
 use App\Http\Requests\UpdateDeductionRequest;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class DeductionsController extends Controller
@@ -53,7 +54,7 @@ class DeductionsController extends Controller
         ], 201);
 
     } catch (\Exception $e) {
-        \Log::error('Deduction creation failed', [
+        Log::error('Deduction creation failed', [
             'error' => $e->getMessage(),
             'trace' => $e->getTraceAsString(),
         ]);

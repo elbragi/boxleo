@@ -8,8 +8,14 @@ use Illuminate\Http\Request;
 
 class EmployeesPerformance extends Controller
 {
-    // protected $crm_email = env('CRM_EMAIL');
-    // protected $crm_password = env('CRM_PASSWORD');
+    protected $crm_email;
+    protected $crm_password;
+
+    public function __construct()
+    {
+        $this->crm_email = env('CRM_EMAIL');
+        $this->crm_password = env('CRM_PASSWORD');
+    }
 
     private function getAccessToken()
     {
@@ -92,9 +98,7 @@ class EmployeesPerformance extends Controller
         $response = curl_exec($curl);
 
         curl_close($curl);
-        echo $response;
-
-
+        return response()->json(json_decode($response, true));
     }
 
 

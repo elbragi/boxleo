@@ -300,31 +300,24 @@ Route::get('v1/generate-payslip', [PayrollApiController::class, 'generatePayslip
 
 
 // Earnings Routes
-Route::prefix('v1/earnings')->group(function () {
-  // Standard CRUD routes
+Route::group(['prefix' => 'v1/earnings'], function () {
   Route::get('/', [EarningsController::class, 'index'])->name('earnings.index');
   Route::post('/', [EarningsController::class, 'store'])->name('earnings.store');
-  Route::get('/earning}', [EarningsController::class, 'show'])->name('earnings.show');
+  Route::get('/{earning}', [EarningsController::class, 'show'])->name('earnings.show');
   Route::put('/{earning}', [EarningsController::class, 'update'])->name('earnings.update');
   Route::patch('/{earning}', [EarningsController::class, 'update'])->name('earnings.patch');
   Route::delete('/{earning}', [EarningsController::class, 'destroy'])->name('earnings.destroy');
-
-  // Additional filter routes
   Route::get('/filter/active', [EarningsController::class, 'active'])->name('earnings.active');
   Route::get('/filter/type/{type}', [EarningsController::class, 'getByType'])->name('earnings.by-type');
   Route::patch('/{earning}/toggle-status', [EarningsController::class, 'toggleStatus'])->name('earnings.toggle-status');
-
-
-
   Route::post('/user-earnings', [UserEarningController::class, 'store']);
   Route::put('/user-earnings/{userEarning}', [UserEarningController::class, 'update']);
-
 });
 
 
 
 // Deductions Routes
-Route::prefix('v1/deductions')->group(function () {
+Route::group(['prefix' => 'v1/deductions'], function () {
   // Standard CRUD routes
   Route::get('/', [DeductionsController::class, 'index'])->name('deductions.index');
   Route::post('/', [DeductionsController::class, 'store'])->name('deductions.store');

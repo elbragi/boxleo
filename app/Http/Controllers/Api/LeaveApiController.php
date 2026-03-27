@@ -1211,6 +1211,7 @@ class LeaveApiController extends Controller
 
           $cancelMessage = "Hi $employeeName, Your Leave application from $leave->from to $leave->to has been Cancelled by " . $firstName . ", Reason: " . $comment;
 
+          $sms_util = new SMSUtil();
           $sms_util->sendSMS($sender_phone, $cancelMessage);
 
           // Email Notification to Employee

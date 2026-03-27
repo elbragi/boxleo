@@ -294,7 +294,7 @@ class PerformanceApiEvaluation extends Controller
 
             if ($leaveStart->gt($leaveEnd)) continue;
 
-            $days = \Carbon\CarbonPeriod::create($leaveStart, $leaveEnd)
+            $days = CarbonPeriod::create($leaveStart, $leaveEnd)
                 ->filter(fn($date) => !$date->isSunday())
                 ->count();
             

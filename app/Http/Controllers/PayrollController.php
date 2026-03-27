@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
+use Carbon\Carbon;
 
 class PayrollController extends Controller
 {
@@ -43,17 +45,17 @@ class PayrollController extends Controller
         $employee = $payslip->user;
         $name = $payslip->is_rider ? $payslip->rider_name : ($employee ? $employee->firstname : 'Employee');
 
-        $pdf = \PDF::loadView('payroll.payslip', compact('payslip', 'employee'))->setPaper('a5', 'portrait');
+        $pdf = PDF::loadView('payroll.payslip', compact('payslip', 'employee'))->setPaper('a5', 'portrait');
         
         $filename = '';
         if ($payslip->is_rider && $payslip->start_date && $payslip->end_date) {
-            $startDate = \Carbon\Carbon::parse($payslip->start_date)->format('M-jS');
-            $endDate = \Carbon\Carbon::parse($payslip->end_date)->format('M-jS');
+            $startDate = Carbon::parse($payslip->start_date)->format('M-jS');
+            $endDate = Carbon::parse($payslip->end_date)->format('M-jS');
             $filename = 'payslip-' . str_replace(' ', '-', $name) . '-' . $startDate . '-to-' . $endDate . '.pdf';
         } else {
-            $month = $payslip->month ?: \Carbon\Carbon::now()->month;
-            $year = $payslip->year ?: \Carbon\Carbon::now()->year;
-            $monthName = \Carbon\Carbon::createFromDate($year, $month, 1)->format('F');
+            $month = $payslip->month ?: Carbon::now()->month;
+            $year = $payslip->year ?: Carbon::now()->year;
+            $monthName = Carbon::createFromDate($year, $month, 1)->format('F');
             $filename = 'payslip-' . str_replace(' ', '-', $name) . '-' . $monthName . '-' . $year . '.pdf';
         }
 
@@ -87,11 +89,11 @@ class PayrollController extends Controller
         $employee = $payslip->user;
         $name = $employee ? $employee->firstname : 'Employee';
 
-        $pdf = \PDF::loadView('payroll.payslip', compact('payslip', 'employee'))->setPaper('a5', 'portrait');
+        $pdf = PDF::loadView('payroll.payslip', compact('payslip', 'employee'))->setPaper('a5', 'portrait');
 
-        $month = $payslip->month ?: \Carbon\Carbon::now()->month;
-        $year = $payslip->year ?: \Carbon\Carbon::now()->year;
-        $monthName = \Carbon\Carbon::createFromDate($year, $month, 1)->format('F');
+        $month = $payslip->month ?: Carbon::now()->month;
+        $year = $payslip->year ?: Carbon::now()->year;
+        $monthName = Carbon::createFromDate($year, $month, 1)->format('F');
         $filename = 'payslip-' . str_replace(' ', '-', $name) . '-' . $monthName . '-' . $year . '.pdf';
 
         if (request()->has('download')) {

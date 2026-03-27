@@ -18,7 +18,7 @@ class OvertimeImport implements ToCollection, WithStartRow
 
     public function collection(Collection $rows)
     {
-        foreach ($rows as $row) {
+        foreach ($rows->toArray() as $row) {
             try {
                 $employee_id = $row[1];
                 $date = Carbon::parse($row[2]);

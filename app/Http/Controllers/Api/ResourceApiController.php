@@ -53,7 +53,6 @@ class ResourceApiController extends Controller
             'condition' => 'nullable|string|max:255',
             'warranty' => 'nullable|string|max:255',
             'purchase_cost' => 'nullable|numeric|min:0',
-            'purchase_date' => 'nullable|date',
             'issued_by' => 'nullable',
             'issued_to' => 'nullable',
         ];
@@ -103,7 +102,6 @@ class ResourceApiController extends Controller
             'condition' => 'nullable|string|max:255',
             'warranty' => 'nullable|string|max:255',
             'purchase_cost' => 'nullable|numeric|min:0',
-            'purchase_date' => 'nullable|date',
             'issued_by' => 'nullable|exists:users,id',
             'issued_to' => 'nullable|exists:users,id',
             'comment' => 'nullable|string',

@@ -1,15 +1,20 @@
 <?php
 
-namespace App\Services\Payroll;
+namespace App\Services;
 
 use App\Models\User;
-use App\Service\KenyaPayroll;
-use App\Service\UgandaPayroll;
-use App\Service\PayrollCalculatorInterface;
+use App\Models\Payslip;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use App\Services\KenyaPayroll;
+use App\Services\UgandaPayroll;
+use App\Services\PayrollCalculatorInterface;
+
+if (!class_exists('Employee')) { class_alias(User::class, 'Employee'); }
+if (!class_exists('Payroll')) { class_alias(Payslip::class, 'Payroll'); }
 
 class PayrollService
 {
@@ -169,7 +174,7 @@ class PayrollService
     //     ];
     // }
     // 1. Calculate Gross Pay
-    public function calculateGrossPay(Employee $employee): float
+    public function calculateGrossPay(User $employee): float
     {
         return $employee->basic_salary +
             $employee->allowances +
@@ -178,7 +183,7 @@ class PayrollService
     }
 
     // 2. Calculate Statutory Deductions
-    public function calculateStatutoryDeductions(Employee $employee, float $gross): array
+    public function calculateStatutoryDeductions(User $employee, float $gross): array
     {
         $paye = $this->calculatePAYE($gross);
         $nssf = min(0.06 * $gross, 1080); // As per NSSF Tier 1+2
@@ -194,7 +199,7 @@ class PayrollService
     }
 
     // 3. Calculate Custom Deductions
-    public function calculateCustomDeductions(Employee $employee): float
+    public function calculateCustomDeductions(User $employee): float
     {
         return $employee->insurance_deduction +
             $employee->salary_advance +
@@ -209,7 +214,7 @@ class PayrollService
     }
 
     // 5. Process Overtime
-    public function processOvertime(Employee $employee): float
+    public function processOvertime(User $employee): float
     {
         $rate = $employee->overtime_rate ?? 500;
         return $employee->overtime_hours * $rate;
@@ -229,7 +234,7 @@ class PayrollService
     }
 
     // 7. Generate Payslip
-    public function generatePayslip(Employee $employee, float $gross, array $deductions, float $net): Payslip
+    public function generatePayslip(User $employee, float $gross, array $deductions, float $net): Payslip
     {
         return Payslip::create([
             'employee_id' => $employee->id,
@@ -250,8 +255,14 @@ class PayrollService
         ];
     }
 
-    // 9. Roll Back Payroll
-    public function rollbackPayroll(Payroll $payroll): bool
+    /**
+     * Roll back payroll.
+     * Note: Payroll model appears to be missing from the codebase; using untyped parameter for now.
+     * 
+     * @param mixed $payroll
+     * @return bool
+     */
+    public function rollbackPayroll($payroll): bool
     {
         foreach ($payroll->payslips as $payslip) {
             $payslip->delete();
@@ -260,9 +271,30 @@ class PayrollService
     }
 
     // 10. Validate Payroll Data
-    public function validatePayrollData(Employee $employee, float $net): bool
+    public function validatePayrollData(User $employee, float $net): bool
     {
         return $net >= 0 && $employee->is_active;
+    }
+
+    protected function getNHIFRate(float $gross): float
+    {
+        if ($gross <= 5999) return 150;
+        if ($gross <= 7999) return 300;
+        if ($gross <= 11999) return 400;
+        if ($gross <= 14999) return 500;
+        if ($gross <= 19999) return 600;
+        if ($gross <= 24999) return 750;
+        if ($gross <= 29999) return 850;
+        if ($gross <= 34999) return 900;
+        if ($gross <= 39999) return 950;
+        if ($gross <= 44999) return 1000;
+        if ($gross <= 49999) return 1100;
+        if ($gross <= 59999) return 1200;
+        if ($gross <= 69999) return 1300;
+        if ($gross <= 79999) return 1400;
+        if ($gross <= 89999) return 1500;
+        if ($gross <= 99999) return 1600;
+        return 1700;
     }
 
     // Helper: Calculate PAYE
