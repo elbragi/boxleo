@@ -113,7 +113,8 @@ export default {
   },
   data() {
     return {
-    serveTime:'',
+      serverTime: '',
+      userTimezone: 'Africa/Nairobi',
 
       headers: [
         { title: 'Attendance Date', value: 'attendance_date' },
@@ -147,9 +148,8 @@ export default {
   },
   created() {
     this.fetchAttendances();
-    this.fetchServerTime();
+    this.fetchUserTimezone();
     setInterval(this.updateCurrentTime, 1000);
-
   },
   mounted() {
     this.getDeviceCoordinates();
@@ -175,7 +175,7 @@ export default {
       return this.isClockedInToday ? 'Clock Out' : 'Clock In';
     },
     todayAttendance() {
-      const today = DateTime.now().setZone('Africa/Nairobi').toFormat('ccc dd MMM yyyy');
+      const today = DateTime.now().setZone(this.userTimezone).toFormat('ccc dd MMM yyyy');
       return this.attendances.find(a => a.attendance_date === today);
     },
     isClockedInToday() {
@@ -187,48 +187,31 @@ export default {
   methods: {
 
 
-async fetchServerTime() {
+async fetchUserTimezone() {
   try {
-    const response = await axios.get('/api/v1/server-time');
-    const serverDatetime = response.data.time;
-    console.log('Server Datetime:', serverDatetime);
-    
-    // Call localizeTime and update the form
-    const localizedTime = await this.localizeTime();
-    this.attendanceForm.serverTime = localizedTime;
-    this.serverTime = localizedTime;
-    
-    console.log('Localized Server Time:', this.attendanceForm.serverTime);
-  } catch (error) {
-    console.error('Failed to fetch server time:', error);
+    const timezoneRes = await axios.get('/api/v1/user-timezone');
+    this.userTimezone = timezoneRes.data.timezone || 'Africa/Nairobi';
+  } catch (err) {
+    console.error('Failed to fetch user timezone:', err);
+    this.userTimezone = 'Africa/Nairobi';
   }
 },
 
 async localizeTime() {
   try {
-    // 1. Get server time string from your endpoint
     const serverTimeRes = await axios.get('/api/v1/server-time');
-    const serverTimeString = serverTimeRes.data.time; // e.g., "2025-04-05 14:10:28"
+    const serverTimeString = serverTimeRes.data.time;
 
-    // 2. Parse server time as from 'Africa/Nairobi' (UTC+3)
     const serverTime = DateTime.fromFormat(serverTimeString, 'yyyy-MM-dd HH:mm:ss', {
       zone: 'Africa/Nairobi',
     });
 
-    // 3. Get user timezone
-    const timezoneRes = await axios.get('/api/v1/user-timezone');
-    const userTimezone = timezoneRes.data.timezone || 'UTC'; // e.g., 'Africa/Maputo'
-
-    // 4. Convert time to user's timezone
-    const localized = serverTime.setZone(userTimezone);
-
-    // 5. Return formatted time in HH:MM format (suitable for time input)
-    return localized.toFormat('HH:mm:ss'); // Format as HH:MM for time input field
+    const localized = serverTime.setZone(this.userTimezone);
+    return localized.toFormat('HH:mm:ss');
   } catch (err) {
     console.error('Error localizing time:', err);
-    // Return time in format suitable for time input field
     const now = new Date();
-    return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
   }
 },
 formatTime(date) {
@@ -293,11 +276,11 @@ formatTime(date) {
       const seconds = now.getSeconds().toString().padStart(2, '0');
       this.currentTime = `${hours}:${minutes}:${seconds}`;
     },
-    submitAttendanceForm() {
-      // if (!this.deviceLatitude || !this.deviceLongitude) {
-      //     this.$toastr.warning("Geolocation data not available. Please enable geolocation to submit your attendance.");
-      //     // return;
-      // }
+    async submitAttendanceForm() {
+      // Re-fetch localized time at the moment of submission to ensure accuracy
+      const freshTime = await this.localizeTime();
+      this.serverTime = freshTime;
+      this.attendanceForm.serverTime = freshTime;
 
       const formData = {
         attendance_type: this.attendanceForm.attendance_type,
@@ -309,16 +292,11 @@ formatTime(date) {
         longitude: this.deviceLongitude
       };
 
-      if (formData.attendance_type === 'clock_in' && this.isBeyond8AM()) {
-        this.$toastr.error("Sorry, you cannot clock in after 8:10 AM.");
-        this.addAttendanceModal = false;
-        return;
-      }
-
+      // Soft warning for early clock-out (allows proceeding)
       if (formData.attendance_type === 'clock_out' && this.isBefore5PM()) {
-        this.$toastr.error("Sorry, it is too early to leave work. Please clock out after 5 PM.");
-        this.addAttendanceModal = false;
-        return;
+        if (!confirm('It is before 5 PM. Are you sure you want to clock out early?')) {
+          return;
+        }
       }
 
       const apiUrl = '/api/v1/attendances';
@@ -335,19 +313,10 @@ formatTime(date) {
         });
     },
 
-    isBeyond8AM() {
-      const currentTime = new Date();
-      const hours = currentTime.getHours();
-      const minutes = currentTime.getMinutes();
-      // Threshold 8:15 AM (giving a bit of grace over 8:10)
-      return (hours > 8) || (hours === 8 && minutes > 15);
-    },
-
     isBefore5PM() {
       const currentTime = new Date();
       const hours = currentTime.getHours();
-      // Threshold 4:00 PM (16:00)
-      return hours < 16;
+      return hours < 17; // Before 5 PM
     },
 
     fetchAttendances() {

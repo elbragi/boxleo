@@ -301,23 +301,26 @@ class AttendanceApiController extends Controller
         }
 
         $office = $user->office;
-        if (!$office) {
-            Log::error('Office not found for user', ['user_id' => $request->user_id]);
-            return response()->json(['error' => 'Office not found'], 404);
+        $notes = null;
+
+        if ($office) {
+            Log::info('Validating location', [
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
+                'office_lat' => $office->latitude,
+                'office_lng' => $office->longitude,
+            ]);
+
+            if ($request->latitude && $request->longitude) {
+                $distanceInKilometers = $this->haversineDistance($office->latitude, $office->longitude, $request->latitude, $request->longitude);
+                $formattedDistance = number_format($distanceInKilometers, 2) . ' km';
+                Log::info('Distance from premise calculated', ['distance' => $formattedDistance]);
+                $notes = "Distance from the premise: " . $formattedDistance;
+            }
+        } else {
+            Log::info('No office assigned for user — remote worker, skipping distance check', ['user_id' => $request->user_id]);
+            $notes = 'Remote worker (no office assigned)';
         }
-
-        Log::info('Validating location', [
-            'latitude' => $request->latitude,
-            'longitude' => $request->longitude,
-            'office_lat' => $office->latitude,
-            'office_lng' => $office->longitude,
-        ]);
-
-        $distanceInKilometers = $this->haversineDistance($office->latitude, $office->longitude, $request->latitude, $request->longitude);
-        $formattedDistance = number_format($distanceInKilometers, 2) . ' km';
-        Log::info('Distance from premise calculated', ['distance' => $formattedDistance]);
-
-        $notes = "Distance from the premise: " . $formattedDistance;
 
         Log::info('Processing attendance', [
             'user_id' => $request->user_id,
