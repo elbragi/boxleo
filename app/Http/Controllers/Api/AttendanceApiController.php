@@ -738,7 +738,7 @@ class AttendanceApiController extends Controller
         // Set default thresholds
         // It's good practice to ensure these are valid time strings.
         $defaultLateThreshold = $unit->late_threshold ?? '08:02';
-        $weekendThreshold = $unit->weekend_threshold ?? '08:31';
+        $weekendThreshold = $unit->weekend_threshold ?? '08:32';
         $sundayThreshold = '11:00'; // Specific Sunday threshold
 
         // Get day of week (0 = Sunday, 6 = Saturday)
@@ -1101,7 +1101,9 @@ class AttendanceApiController extends Controller
         // Check for Sunday specifically
         if ($userDayOfWeek === Carbon::SUNDAY) {
             $lateThreshold = $sundayThreshold;
-        } elseif (($isWeekend || $isHoliday) && !$isExemptEvent) {
+        } elseif ($isWeekend) {
+            $lateThreshold = $weekendThreshold;
+        } elseif ($isHoliday && !$isExemptEvent) {
             $lateThreshold = $weekendThreshold;
         } else {
             $lateThreshold = $defaultLateThreshold;
