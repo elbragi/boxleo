@@ -336,7 +336,17 @@
                     :disabled="!isEditing"
                     :rules="[v => !!v || 'Employee is required']"
                     @update:modelValue="updateEmployee"
-                  />
+                  >
+                    <template v-slot:item="{ props, item }">
+                      <v-list-item v-bind="props" :title="item.raw.fullname">
+                        <template v-slot:subtitle>
+                          <span :class="{'font-weight-bold text-primary': [1, 15].includes(item.raw.designation_id)}">
+                            {{ item.raw.designation_name }}
+                          </span>
+                        </template>
+                      </v-list-item>
+                    </template>
+                  </v-autocomplete>
                 </v-col>
                 <v-col cols="12" sm="6">
                   <v-text-field
@@ -542,9 +552,20 @@
                     label="Employee"
                     clearable
                     dense
+                    variant="outlined"
                     :rules="[v => !!v || 'Employee is required']"
                     @update:modelValue="updateNewEmployee"
-                  />
+                  >
+                    <template v-slot:item="{ props, item }">
+                      <v-list-item v-bind="props" :title="item.raw.fullname">
+                        <template v-slot:subtitle>
+                          <span :class="{'font-weight-bold text-primary': [1, 15].includes(item.raw.designation_id)}">
+                            {{ item.raw.designation_name }}
+                          </span>
+                        </template>
+                      </v-list-item>
+                    </template>
+                  </v-autocomplete>
                 </v-col>
                 <v-col cols="12" sm="6">
                   <v-text-field
@@ -1332,7 +1353,8 @@ export default {
           this.team = data.team.map(u => ({
             id: u.id,
             fullname: `${u.firstname} ${u.lastname}`,
-            designation_id: u.designation_id
+            designation_id: u.designation_id,
+            designation_name: u.designation ? u.designation.name : ''
           }));
           if (this.editEvaluation.user_id && typeof this.editEvaluation.user_id === 'object') {
             const matchingUser = this.team.find(t => t.id === this.editEvaluation.user_id.id);

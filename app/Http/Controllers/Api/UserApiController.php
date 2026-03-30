@@ -24,13 +24,13 @@ class UserApiController extends Controller
         $query = User::with(['department', 'unit', 'designation'])->where('is_enabled', true);
     
         // 1) Apply role-based scoping
-        if ($authUser->hasRole('admin') || $authUser->super_admin) {
-            // Admins can see everyone
-        } elseif ($authUser->is_hod) {
+        if ($authUser->is_hod) {
             $hodDeptIds = $authUser->hodDepartments->pluck('id');
             // For HODs: only show Managers and Country Managers in their departments
             $query->whereIn('designation_id', [1, 15])
                   ->whereIn('department_id', $hodDeptIds);
+        } elseif ($authUser->hasRole('admin') || $authUser->super_admin) {
+            // Admins can see everyone
         } elseif ($authUser->designation_id === 1 || $authUser->designation_id === 16) {
             $managerDeptIds = $authUser->managerDepartments->pluck('id');
             $query->where(function($q) use ($managerDeptIds, $authUser) {
