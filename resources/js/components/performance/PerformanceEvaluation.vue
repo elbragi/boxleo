@@ -306,6 +306,20 @@
                     clearable
                     :disabled="!isEditing"
                     :rules="[v => !!v || 'Unit is required']"
+                    @update:modelValue="fetchDepartmentsAndEmployees(editEvaluation)"
+                  />
+                </v-col>
+                <v-col cols="12">
+                  <v-autocomplete
+                    v-model="editEvaluation.department_id"
+                    :items="departments"
+                    label="Department"
+                    item-title="name"
+                    item-value="id"
+                    variant="outlined"
+                    clearable
+                    :disabled="!isEditing"
+                    :rules="[v => !!v || 'Department is required']"
                     @update:modelValue="fetchEmployees(editEvaluation)"
                   />
                 </v-col>
@@ -503,6 +517,19 @@
                     item-value="id"
                     clearable
                     :rules="[v => !!v || 'Unit is required']"
+                    @update:modelValue="fetchDepartmentsAndEmployees(newEvaluation)"
+                  />
+                </v-col>
+                <v-col cols="12">
+                  <v-autocomplete
+                    v-model="newEvaluation.department_id"
+                    :items="departments"
+                    label="Department"
+                    variant="outlined"
+                    item-title="name"
+                    item-value="id"
+                    clearable
+                    :rules="[v => !!v || 'Department is required']"
                     @update:modelValue="fetchEmployees(newEvaluation)"
                   />
                 </v-col>
