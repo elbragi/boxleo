@@ -28,16 +28,9 @@ class UserApiController extends Controller
             // Admins can see everyone
         } elseif ($authUser->is_hod) {
             $hodDeptIds = $authUser->hodDepartments->pluck('id');
-            $query->where(function($q) use ($hodDeptIds) {
-                // HODs see all users in their assigned departments
-                $q->whereIn('department_id', $hodDeptIds)
-                  ->orWhere(fn($q2) => 
-                        $q2->whereHas('managerDepartments', fn($q3) => 
-                            $q3->whereIn('department_id', $hodDeptIds)
-                        )
-                    );
-            });
-    
+            // For HODs: only show Managers and Country Managers in their departments
+            $query->whereIn('designation_id', [1, 15])
+                  ->whereIn('department_id', $hodDeptIds);
         } elseif ($authUser->designation_id === 1 || $authUser->designation_id === 16) {
             $managerDeptIds = $authUser->managerDepartments->pluck('id');
             $query->where(function($q) use ($managerDeptIds, $authUser) {

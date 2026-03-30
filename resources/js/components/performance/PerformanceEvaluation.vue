@@ -305,7 +305,7 @@
                     variant="outlined"
                     clearable
                     :disabled="!isEditing"
-                    :rules="[v => !!v || 'Unit is required']"
+                    :rules="isHod ? [] : [v => !!v || 'Unit is required']"
                     @update:modelValue="fetchDepartmentsAndEmployees(editEvaluation)"
                   />
                 </v-col>
@@ -516,7 +516,7 @@
                     item-title="name"
                     item-value="id"
                     clearable
-                    :rules="[v => !!v || 'Unit is required']"
+                    :rules="isHod ? [] : [v => !!v || 'Unit is required']"
                     @update:modelValue="fetchDepartmentsAndEmployees(newEvaluation)"
                   />
                 </v-col>
@@ -903,13 +903,18 @@ export default {
       if (!this.newEvaluation.user_id && !this.editEvaluation.user_id) return false;
       const newUser = this.team.find(user => user.id === (this.newEvaluation.user_id?.id || this.newEvaluation.user_id));
       const editUser = this.team.find(user => user.id === (this.editEvaluation.user_id?.id || this.editEvaluation.user_id));
-      return (newUser && newUser.designation_id !== 1) || (editUser && editUser.designation_id !== 1);
+      // HODs/Managers/Country Managers score on leadership, not sub-reports usually
+      return (newUser && ![1, 15].includes(newUser.designation_id)) || (editUser && ![1, 15].includes(editUser.designation_id));
     },
     shouldShowLeadership() {
       if (!this.newEvaluation.user_id && !this.editEvaluation.user_id) return false;
       const newUser = this.team.find(user => user.id === (this.newEvaluation.user_id?.id || this.newEvaluation.user_id));
       const editUser = this.team.find(user => user.id === (this.editEvaluation.user_id?.id || this.editEvaluation.user_id));
-      return (newUser && newUser.designation_id === 1) || (editUser && editUser.designation_id === 1);
+      // Managers (1) and Country Managers (15) show leadership scores
+      return (newUser && [1, 15].includes(newUser.designation_id)) || (editUser && [1, 15].includes(editUser.designation_id));
+    },
+    isHod() {
+      return this.user?.is_hod == 1;
     },
   },
   watch: {
@@ -1108,7 +1113,7 @@ export default {
       }
       this.editEvaluation.unit_id = evaluation.unit_id;
       this.editEvaluation.department_id = evaluation.department_id;
-      if (evaluation.user.designation_id === 1) {
+      if ([1, 15].includes(evaluation.user.designation_id)) {
         this.editEvaluation.reports_submitted = null;
       }
       this.fetchDepartmentsAndEmployees(this.editEvaluation);
@@ -1310,8 +1315,13 @@ export default {
       const activeUnitId = source.unit_id;
       const activeDeptId = source.department_id;
 
-      if (!activeUnitId || !activeDeptId) {
-        // If we are in the middle of selecting, just return (the watchers will trigger again when both are set)
+      if (!activeDeptId) {
+        // Department is always required to start fetching employees
+        return;
+      }
+      
+      if (!activeUnitId && !this.isHod) {
+        // Unit is required for non-HODs
         return;
       }
       try {
@@ -1361,13 +1371,16 @@ export default {
       }
       const unitId = source.unit_id;
 
-      if (!unitId) {
-        this.departments = [];
-        return;
-      }
+      // HODs can see all departments to evaluate managers cross-country
+      // If no unitId is selected, we fetch all departments
       try {
+        const params = {};
+        if (unitId) {
+          params.unit_id = unitId;
+        }
+        
         const { data } = await axios.get('/api/v1/departments', {
-          params: { unit_id: unitId }
+          params: params
         });
         this.departments = data.departments || [];
       } catch (error) {
