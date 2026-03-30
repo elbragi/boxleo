@@ -214,7 +214,7 @@
           <v-icon size="20" color="primary" class="mx-2" @click.stop="drawer = !drawer">
             mdi-filter
           </v-icon>
-          <v-btn @click="addEvaluationDialog = true" icon>
+          <v-btn @click="openAddEvaluationDialog" icon>
             <v-tooltip activator="parent" location="top">Add Evaluation</v-tooltip>
             <v-icon color="primary">mdi-plus</v-icon>
           </v-btn>
@@ -306,21 +306,7 @@
                     clearable
                     :disabled="!isEditing"
                     :rules="[v => !!v || 'Unit is required']"
-                    @update:modelValue="fetchDepartmentsAndEmployees"
-                  />
-                </v-col>
-                <v-col cols="12">
-                  <v-autocomplete
-                    v-model="editEvaluation.department_id"
-                    :items="departments"
-                    label="Department"
-                    item-title="name"
-                    item-value="id"
-                    variant="outlined"
-                    clearable
-                    :disabled="!isEditing"
-                    :rules="[v => !!v || 'Department is required']"
-                    @update:modelValue="fetchEmployees"
+                    @update:modelValue="fetchEmployees(editEvaluation)"
                   />
                 </v-col>
                 <v-col cols="12" sm="6">
@@ -517,20 +503,7 @@
                     item-value="id"
                     clearable
                     :rules="[v => !!v || 'Unit is required']"
-                    @update:modelValue="fetchDepartmentsAndEmployees"
-                  />
-                </v-col>
-                <v-col cols="12">
-                  <v-autocomplete
-                    v-model="newEvaluation.department_id"
-                    :items="departments"
-                    label="Department"
-                    variant="outlined"
-                    item-title="name"
-                    item-value="id"
-                    clearable
-                    :rules="[v => !!v || 'Department is required']"
-                    @update:modelValue="fetchEmployees"
+                    @update:modelValue="fetchEmployees(newEvaluation)"
                   />
                 </v-col>
                 <v-col cols="12" sm="6">
@@ -925,11 +898,11 @@ export default {
     'newEvaluation.unit_id'(newUnit) {
       this.newEvaluation.department_id = null;
       this.newEvaluation.user_id = null;
-      this.fetchDepartmentsAndEmployees();
+      this.fetchDepartmentsAndEmployees(this.newEvaluation);
     },
     'newEvaluation.department_id'(newDept) {
       this.newEvaluation.user_id = null;
-      this.fetchEmployees();
+      this.fetchEmployees(this.newEvaluation);
     },
     'editEvaluation.user_id'(newVal) {
       if (!this.shouldShowReportsSubmitted) {
@@ -943,11 +916,11 @@ export default {
     'editEvaluation.unit_id'(newUnit) {
       this.editEvaluation.department_id = null;
       this.editEvaluation.user_id = null;
-      this.fetchDepartmentsAndEmployees();
+      this.fetchDepartmentsAndEmployees(this.editEvaluation);
     },
     'editEvaluation.department_id'(newDept) {
       this.editEvaluation.user_id = null;
-      this.fetchEmployees();
+      this.fetchEmployees(this.editEvaluation);
     },
     'newEvaluation.evaluation_date'(newDate) {
       if (this.newEvaluation.user_id) {
@@ -1111,7 +1084,7 @@ export default {
       if (evaluation.user.designation_id === 1) {
         this.editEvaluation.reports_submitted = null;
       }
-      this.fetchDepartmentsAndEmployees();
+      this.fetchDepartmentsAndEmployees(this.editEvaluation);
       this.editDialog = true;
       this.isEditing = false;
     },
@@ -1190,6 +1163,13 @@ export default {
         percentage: null,
         leadership: null
       };
+      this.departments = [];
+      this.team = [];
+      this.isEditing = false;
+    },
+    openAddEvaluationDialog() {
+      this.resetEditForm();
+      this.addEvaluationDialog = true;
     },
     addEvaluation() {
       if (!this.$refs.evaluationForm.validate()) {
@@ -1291,15 +1271,20 @@ export default {
         this.loading = false;
       }
     },
-    async fetchEmployees() {
+    async fetchEmployees(source = null) {
       this.team = [];
-      const { unit_id, department_id } = this.newEvaluation;
-      const editUnitId = this.editEvaluation.unit_id;
-      const editDeptId = this.editEvaluation.department_id;
-      const activeUnitId = editUnitId || unit_id;
-      const activeDeptId = editDeptId || department_id;
+      
+      // Determine the correct source for unit and department IDs
+      if (!source || (typeof source !== 'object') || Array.isArray(source)) {
+          const isEditing = this.editDialog || (this.editEvaluation && this.editEvaluation.id);
+          source = isEditing ? this.editEvaluation : this.newEvaluation;
+      }
+      
+      const activeUnitId = source.unit_id;
+      const activeDeptId = source.department_id;
+
       if (!activeUnitId || !activeDeptId) {
-        this.$toastr.warning('Please select both a unit and a department to load employees.');
+        // If we are in the middle of selecting, just return (the watchers will trigger again when both are set)
         return;
       }
       try {
@@ -1330,19 +1315,29 @@ export default {
         this.$toastr.error('Failed to fetch employees.');
       }
     },
-    fetchDepartmentsAndEmployees() {
+    fetchDepartmentsAndEmployees(source = null) {
+      if (!source || (typeof source !== 'object') || Array.isArray(source)) {
+          const isEditing = this.editDialog || (this.editEvaluation && this.editEvaluation.id);
+          source = isEditing ? this.editEvaluation : this.newEvaluation;
+      }
       this.departments = [];
-      if (this.editEvaluation.unit_id || this.newEvaluation.unit_id) {
-        this.fetchDepartments();
-        this.fetchEmployees();
+      if (source.unit_id) {
+        this.fetchDepartments(source);
+        this.fetchEmployees(source);
       }
     },
-    async fetchDepartments() {
-      if (!this.newEvaluation.unit_id && !this.editEvaluation.unit_id) {
+    async fetchDepartments(source = null) {
+      // Determine the correct source for unit ID
+      if (!source || (typeof source !== 'object') || Array.isArray(source)) {
+          const isEditing = this.editDialog || (this.editEvaluation && this.editEvaluation.id);
+          source = isEditing ? this.editEvaluation : this.newEvaluation;
+      }
+      const unitId = source.unit_id;
+
+      if (!unitId) {
         this.departments = [];
         return;
       }
-      const unitId = this.newEvaluation.unit_id || this.editEvaluation.unit_id;
       try {
         const { data } = await axios.get('/api/v1/departments', {
           params: { unit_id: unitId }

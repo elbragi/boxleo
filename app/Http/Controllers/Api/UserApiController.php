@@ -21,7 +21,7 @@ class UserApiController extends Controller
         $deptFilter = $request->query('department_id');
     
         // Start with a base User query including the relations you need
-        $query = User::with(['department', 'unit', 'designation']);
+        $query = User::with(['department', 'unit', 'designation'])->where('is_enabled', true);
     
         // 1) Apply role-based scoping
         if ($authUser->hasRole('admin') || $authUser->super_admin) {
@@ -52,14 +52,10 @@ class UserApiController extends Controller
         }
     
         // 2) Apply optional filters from the front-end
-        // IMPORTANT: If a department filter is applied, we restrict to that department.
-        // The scoping above already ensures they can only filter within what they are allowed to see.
-        // However, we want to make sure if they ARE allowed to see a department, they see ALL employees in it.
-        if ($deptFilter && ($authUser->hasRole('admin') || $authUser->super_admin || $authUser->is_hod || $authUser->designation_id === 1 || $authUser->designation_id === 16)) {
-            // Special case: if they selected a department, let's show all employees in it
-            // assuming they have rights to see it (which is true if they can select it in UI)
+        if ($deptFilter) {
             $query->where('department_id', $deptFilter);
-        } elseif ($unitFilter) {
+        }
+        if ($unitFilter) {
             $query->where('unit_id', $unitFilter);
         }
     
