@@ -1365,8 +1365,8 @@ export default {
       const activeUnitId = source.unit_id;
       const activeDeptId = source.department_id;
 
-      if (!activeDeptId) {
-        // Department is always required to start fetching employees
+      if (!activeDeptId && !this.isCountryManagerEvaluation) {
+        // Department is required unless we are auto-selecting CM
         return;
       }
       
@@ -1375,18 +1375,30 @@ export default {
         return;
       }
       try {
+        const params = { unit_id: activeUnitId };
+        if (activeDeptId) {
+          params.department_id = activeDeptId;
+        }
+        
         const { data } = await axios.get('/api/v1/team', {
-          params: { unit_id: activeUnitId, department_id: activeDeptId }
+          params: params
         });
         if (data.team && Array.isArray(data.team)) {
           this.team = data.team.map(u => ({
             id: u.id,
             fullname: `${u.firstname} ${u.lastname}`,
             designation_id: u.designation_id,
-            designation_name: u.designation ? u.designation.name : ''
+            designation_name: u.designation ? u.designation.name : '',
+            department_id: u.department_id
           }));
           if (this.isCountryManagerEvaluation) {
-            this.autoSelectCountryManager();
+            // Find Country Manager (15) across the entire unit if no department was selected yet
+            const countryManager = this.team.find(u => u.designation_id === 15);
+            if (countryManager) {
+                source.department_id = countryManager.department_id;
+                source.user_id = countryManager.id;
+                this.updateNewEmployee();
+            }
           }
           if (this.editEvaluation.user_id && typeof this.editEvaluation.user_id === 'object') {
             const matchingUser = this.team.find(t => t.id === this.editEvaluation.user_id.id);
