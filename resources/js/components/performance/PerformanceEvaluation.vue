@@ -512,7 +512,19 @@
 
       <v-dialog v-model="addEvaluationDialog" width="800">
         <v-card>
-          <v-card-title>Add Performance Evaluation</v-card-title>
+          <v-card-title class="d-flex align-center">
+            Add Performance Evaluation
+            <v-spacer></v-spacer>
+            <v-switch
+              v-if="isHod"
+              v-model="isCountryManagerEvaluation"
+              label="Evaluate Country Manager"
+              hide-details
+              density="compact"
+              class="mr-4"
+              color="primary"
+            ></v-switch>
+          </v-card-title>
           <v-divider></v-divider>
           <v-card-text>
             <v-form ref="evaluationForm" @submit.prevent="addEvaluation">
@@ -833,6 +845,7 @@ export default {
       users: [],
       averageTotalScore: 0,
       averagePercentage: 0,
+      isCountryManagerEvaluation: false,
       averageAttendance: 0,
       averageProductivity: 0,
       averageProblemsSolved: 0,
@@ -983,6 +996,11 @@ export default {
     'editEvaluation.evaluation_date'(newDate) {
       if (this.editEvaluation.user_id) {
         this.fetchEditAttendanceScore();
+      }
+    },
+    'isCountryManagerEvaluation'(newVal) {
+      if (newVal) {
+        this.autoSelectCountryManager();
       }
     },
   },
@@ -1222,7 +1240,18 @@ export default {
     },
     openAddEvaluationDialog() {
       this.resetEditForm();
+      this.isCountryManagerEvaluation = false;
       this.addEvaluationDialog = true;
+    },
+    autoSelectCountryManager() {
+      if (!this.isCountryManagerEvaluation) return;
+      
+      // Look for Country Manager (designation 15) in current team
+      const countryManager = this.team.find(u => u.designation_id === 15);
+      if (countryManager) {
+        this.newEvaluation.user_id = countryManager.id;
+        this.updateNewEmployee();
+      }
     },
     addEvaluation() {
       if (!this.$refs.evaluationForm.validate()) {
@@ -1356,6 +1385,9 @@ export default {
             designation_id: u.designation_id,
             designation_name: u.designation ? u.designation.name : ''
           }));
+          if (this.isCountryManagerEvaluation) {
+            this.autoSelectCountryManager();
+          }
           if (this.editEvaluation.user_id && typeof this.editEvaluation.user_id === 'object') {
             const matchingUser = this.team.find(t => t.id === this.editEvaluation.user_id.id);
             if (matchingUser) {
