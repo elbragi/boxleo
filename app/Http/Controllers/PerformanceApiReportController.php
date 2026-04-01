@@ -24,8 +24,9 @@ class PerformanceApiReportController extends Controller
     public function exportPerformanceEvaluations(Request $request)
     {
         $evaluations = collect($request->input('evaluations', []));
+        $ranked = $this->rankEvaluations($evaluations);
 
-        return Excel::download(new PerformanceExport($evaluations), 'performance_evaluations.xlsx');
+        return Excel::download(new PerformanceExport($ranked), 'performance_evaluations.xlsx');
     }
 
     // Helper to assign ranking based on percentage 

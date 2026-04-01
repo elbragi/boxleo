@@ -34,11 +34,10 @@ class PerformanceExport implements FromCollection, WithHeadings, WithMapping, Wi
     public function headings(): array
     {
         return [
-            'ID',
+            'Rank',
             'Employee Name',
-            // 'Evaluator',
+            'Country/Unit',
             'Department',
-            // 'Evaluation Date',
             'Attendance',
             'Problems Solved',
             'Reports Submitted',
@@ -64,19 +63,16 @@ class PerformanceExport implements FromCollection, WithHeadings, WithMapping, Wi
     Log::info('Mapping evaluation record', ['evaluation' => $evaluation]);
 
     return [
-        $evaluation['id'] ?? 'N/A', 
+        $evaluation['rank'] ?? 'N/A', 
 
         // Employee Name
         ($evaluation['user']['firstname'] ?? 'N/A') . ' ' . ($evaluation['user']['lastname'] ?? 'N/A'),
 
-        // Evaluator
-        // ($evaluation['evaluator']['firstname'] ?? 'N/A') . ' ' . ($evaluation['evaluator']['lastname'] ?? 'N/A'),
+        // Country/Unit
+        $evaluation['user']['unit']['name'] ?? 'N/A',
 
         // Department
         $evaluation['user']['department']['name'] ?? 'N/A',
-
-        // Evaluation Date
-        // $evaluation['evaluation_date'] ? Carbon::parse($evaluation['evaluation_date'])->format('Y-m-d') : 'N/A',
 
         // Other fields
         $evaluation['attendance'] ?? 'N/A',

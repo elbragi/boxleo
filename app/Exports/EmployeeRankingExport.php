@@ -30,6 +30,7 @@ class EmployeeRankingExport implements FromCollection, WithHeadings, WithMapping
         return [
             'Rank',
             'Employee Name',
+            'Country/Unit',
             'Department',
             'Total Score',
             'Percentage (%)',
@@ -47,6 +48,8 @@ class EmployeeRankingExport implements FromCollection, WithHeadings, WithMapping
 
             ($employee['user']['firstname'] ?? 'N/A') . ' ' . ($employee['user']['lastname'] ?? 'N/A'),
 
+            $employee['user']['unit']['name'] ?? 'N/A',
+
             $employee['user']['department']['name'] ?? 'N/A',
             
 
@@ -54,7 +57,7 @@ class EmployeeRankingExport implements FromCollection, WithHeadings, WithMapping
 
             $employee['percentage'] ?? 'N/A',
 
-            $employee['created_at'] 
+            $employee['evaluation_date'] 
                 ? Carbon::parse($employee['evaluation_date'])->format('Y-m-d') 
                 : 'N/A',
         ];
