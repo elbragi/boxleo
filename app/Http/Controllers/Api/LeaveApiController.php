@@ -568,11 +568,21 @@ class LeaveApiController extends Controller
           break;
 
         case 'Manager Approved':
-          // Standard flow: HR approval required
+          // HR approval required
           if ($approver->is_hr === 1) {
-            $leave->status = 'Hr Approved';
-            $this->logLeaveAction($leave, 'Hr Approved', $userId);
-            $this->notifyNextApprover($leave, 'HOD');
+            if ($userCountry === 'kenya') {
+              // Kenya: standard flow — HR approves, then HOD gives final approval
+              $leave->status = 'Hr Approved';
+              $this->logLeaveAction($leave, 'Hr Approved', $userId);
+              $this->notifyNextApprover($leave, 'HOD');
+            } else {
+              // Non-Kenya: HR approval is the final step
+              $leave->status = 'Approved';
+              $this->logLeaveAction($leave, 'Final Approved (HR)', $userId);
+              $this->notifyEmployee($leave);
+              $this->notifyTaskAssignees($leave);
+              Log::info('Non-Kenya leave: HR approval is final. HOD step skipped.', ['country' => $userCountry, 'leave_id' => $leave->id]);
+            }
           } else {
             return response()->json(['error' => 'Unauthorized - Only HR can approve at this stage'], 403);
           }
@@ -1065,9 +1075,19 @@ class LeaveApiController extends Controller
 
             case 'Manager Approved':
               if ($approver->is_hr === 1) {
-                $leave->status = 'Hr Approved';
-                $this->logLeaveAction($leave, 'Hr Approved', $userId);
-                $this->notifyNextApprover($leave, 'HOD');
+                $leaveCountry = strtolower($leave->user->unit->name ?? 'kenya');
+                if ($leaveCountry === 'kenya') {
+                  // Kenya: standard flow — notify HOD next
+                  $leave->status = 'Hr Approved';
+                  $this->logLeaveAction($leave, 'Hr Approved', $userId);
+                  $this->notifyNextApprover($leave, 'HOD');
+                } else {
+                  // Non-Kenya: HR approval is final
+                  $leave->status = 'Approved';
+                  $this->logLeaveAction($leave, 'Final Approved (HR)', $userId);
+                  $this->notifyEmployee($leave);
+                  Log::info('Bulk approve: Non-Kenya leave final approved by HR', ['country' => $leaveCountry, 'leave_id' => $leave->id]);
+                }
                 $leave->save();
                 $results['success'][] = $leaveId;
               } else {
