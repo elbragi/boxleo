@@ -65,12 +65,15 @@
 
         <!-- Main Tracker Card -->
         <v-card class="glass-card main-content-card relative-z" elevation="0">
-            <v-toolbar flat color="transparent" class="px-6" height="100">
-                <div class="d-flex flex-column pt-4">
-                    <v-toolbar-title class="font-weight-black text-h5 tracking-tighter indigo-gradient-text">
+            <!-- Header Section -->
+            <div class="px-8 py-8 d-flex align-center border-bottom-glass">
+                <div class="d-flex flex-column">
+                    <h1 class="font-weight-black text-h4 tracking-tighter indigo-gradient-text mb-1">
                         Task Tracking
-                    </v-toolbar-title>
-                    <span class="text-caption text-indigo-darken-2 font-weight-bold opacity-60 mt-n1">IT DEPT. PROGRESS MATRIX</span>
+                    </h1>
+                    <span class="text-overline text-indigo-darken-2 font-weight-black opacity-60" style="line-height:1">
+                        IT DEPT. PROGRESS MATRIX
+                    </span>
                 </div>
                 
                 <v-spacer></v-spacer>
@@ -82,7 +85,7 @@
                         label="Quick filtering..."
                         single-line
                         hide-details
-                        density="compact"
+                        density="comfortable"
                         variant="solo"
                         class="search-bar-modern mr-4"
                         rounded="lg"
@@ -92,18 +95,18 @@
                     
                     <v-btn
                         color="indigo-darken-4"
-                        class="rounded-lg px-6 text-none font-weight-bold shadow-soft"
-                        height="40"
+                        class="rounded-lg px-8 text-none font-weight-black shadow-soft"
+                        height="48"
                         @click="openDialog()"
                         prepend-icon="mdi-plus-circle"
                     >
-                        New Ticket
+                        NEW TICKET
                     </v-btn>
-                    <v-btn icon @click="fetchRequests" class="ml-3 glass-btn" size="small">
-                        <v-icon size="18" color="indigo-darken-4">mdi-sync</v-icon>
+                    <v-btn icon @click="fetchRequests" class="ml-3 glass-btn" size="large" elevation="0">
+                        <v-icon size="20" color="indigo-darken-4">mdi-sync</v-icon>
                     </v-btn>
                 </div>
-            </v-toolbar>
+            </div>
 
             <v-data-table
                 :headers="headers"
