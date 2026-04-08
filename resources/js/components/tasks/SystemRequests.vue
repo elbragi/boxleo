@@ -65,12 +65,12 @@
 
         <!-- Main Tracker Card -->
         <v-card class="glass-card main-content-card relative-z" elevation="0">
-            <v-toolbar flat color="transparent" class="px-6 py-4">
-                <div class="d-flex flex-column">
+            <v-toolbar flat color="transparent" class="px-6" height="100">
+                <div class="d-flex flex-column pt-4">
                     <v-toolbar-title class="font-weight-black text-h5 tracking-tighter indigo-gradient-text">
                         Task Tracking
                     </v-toolbar-title>
-                    <span class="text-caption text-indigo-darken-2 font-weight-bold opacity-60">IT DEPT. PROGRESS MATRIX</span>
+                    <span class="text-caption text-indigo-darken-2 font-weight-bold opacity-60 mt-n1">IT DEPT. PROGRESS MATRIX</span>
                 </div>
                 
                 <v-spacer></v-spacer>
