@@ -137,6 +137,12 @@
                     </div>
                 </template>
 
+                <template v-slot:item.requested_by="{ item }">
+                    <div class="text-caption font-weight-black text-indigo-darken-3">
+                        {{ item.requested_by || '-' }}
+                    </div>
+                </template>
+
                 <template v-slot:item.developer_name="{ item }">
                     <v-tooltip location="top" :text="item.developer_name || 'Unassigned'">
                         <template v-slot:activator="{ props }">
@@ -242,6 +248,17 @@
                             </v-col>
                             <v-col cols="12" md="6">
                                 <v-text-field
+                                    v-model="editedItem.requested_by"
+                                    label="Requested By"
+                                    variant="outlined"
+                                    density="comfortable"
+                                    color="indigo"
+                                    class="modern-input"
+                                    prepend-inner-icon="mdi-account-question-outline"
+                                ></v-text-field>
+                            </v-col>
+                            <v-col cols="12" md="6">
+                                <v-text-field
                                     v-model="editedItem.developer_name"
                                     label="Assigned Dev"
                                     variant="outlined"
@@ -328,6 +345,7 @@ export default {
             },
             headers: [
                 { title: 'Task Objective', key: 'title', align: 'start' },
+                { title: 'Requester', key: 'requested_by', width: '120px' },
                 { title: 'Priority', key: 'priority', width: '90px' },
                 { title: 'Status', key: 'status', width: '130px' },
                 { title: 'Dev', key: 'developer_name', width: '50px', align: 'center' },
