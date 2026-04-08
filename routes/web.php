@@ -34,6 +34,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SalaryController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\SystemRequestController;
 use App\Http\Controllers\TaxesController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TimelineController;
@@ -169,6 +170,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/timeline', [UserController::class, 'timeline']);
     // requestions
     Route::get('/requisitions', [RequisitionController::class, 'index']);
+    Route::get('/system-requests', [SystemRequestController::class, 'index']);
     Route::get('/resources', [ResourceController::class, 'index']);
     Route::get('/employee-voice', [ComplaintController::class, 'employeeComplaints']);
     Route::get('/employee-leaves', [LeaveController::class, 'employeeLeaves']);

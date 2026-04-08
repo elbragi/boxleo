@@ -82,8 +82,13 @@
 
                 <li>
                     <a href="/requisitions"><i class="la la-check-circle"></i> <span>Requisitions</span></a>
-
                 </li>
+
+                @if(Auth::user()->hasRole('admin') || Auth::user()->department_id == 3 || Auth::user()->department_id == 1 || Auth::user()->department_id == 4 || Auth::user()->is_hr || Auth::user()->is_hod || Auth::user()->is_coo || Auth::user()->designation_id == 6)
+                <li>
+                    <a href="/system-requests"><i class="la la-rocket"></i> <span>Task Tracker</span></a>
+                </li>
+                @endif
 
                 <li class="submenu">
                     <a href="javascript:void(0);" data-toggle="collapse" data-bs-target="#performance"><i

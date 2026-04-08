@@ -161,7 +161,7 @@ header .has-arrow .dropdown-toggle[aria-expanded="true"]:after {
   font-size: 0.95em;
   font-weight: 400;
   padding: 10px 15px;
-  color: #d0d3e5 !important;
+  color: #ffffff !important;
   border-radius: 6px;
   transition: all 0.3s ease;
   text-decoration: none;
@@ -174,12 +174,15 @@ header .has-arrow .dropdown-toggle[aria-expanded="true"]:after {
 }
 
 .sidebar-menu li a:hover {
-  background-color: #9e999925;
-  color: #147900;
+  background-color: rgba(30, 144, 255, 0.1);
+  box-shadow: 0 0 25px rgba(30, 144, 255, 0.3);
+  color: #fff !important;
+  transform: translateX(5px);
 }
 
-.sidebar-menu li a:hover i {
-  color: #00796b;
+.sidebar-menu li a:hover i,
+.sidebar-menu li a:hover span {
+  color: #fff !important;
 }
 
 .sidebar-menu li .menu-arrow {

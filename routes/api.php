@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TicketApiController;
 use App\Http\Controllers\Api\RoleApiController;
 use App\Http\Controllers\Api\TaskApiController;
+use App\Http\Controllers\Api\SystemRequestApiController;
 use App\Http\Controllers\Api\UnitApiController;
 use App\Http\Controllers\Api\UserApiController;
 use App\Http\Controllers\Api\AwardApiController;
@@ -92,6 +93,13 @@ Route::middleware('auth:sanctum')->group(function () {
   //tasks
   Route::get('v1/tasks', [TaskApiController::class, 'index']);
   Route::post('v1/tasks', [TaskApiController::class, 'store']);
+
+  //system requests
+  Route::get('v1/system-requests', [SystemRequestApiController::class, 'index']);
+  Route::post('v1/system-requests', [SystemRequestApiController::class, 'store']);
+  Route::get('v1/system-requests/{id}', [SystemRequestApiController::class, 'show']);
+  Route::put('v1/system-requests/{id}', [SystemRequestApiController::class, 'update']);
+  Route::delete('v1/system-requests/{id}', [SystemRequestApiController::class, 'destroy']);
 
   //offices
   Route::get('v1/offices', [OfficeApiController::class, 'index']);

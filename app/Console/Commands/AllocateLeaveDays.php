@@ -38,14 +38,18 @@ class AllocateLeaveDays extends Command
                 }
             });
         } else {
-            $this->info('Starting annual leave allocation: adding 1.75 days...');
-            \App\Models\LeaveBalance::where('leave_type_id', 1)->chunk(100, function ($leaveBalances) {
-                foreach ($leaveBalances as $leaveBalance) {
-                    $leaveBalance->increment('allocated', 1.75);
-                    $leaveBalance->increment('balance', 1.75);
-                    $this->info("Updated Annual Leave for user_id: {$leaveBalance->user_id}. New Balance: {$leaveBalance->balance}");
-                }
-            });
+            $this->info('Starting annual leave allocation: adding 1.75 days (excluding Interns and Attachees)...');
+            \App\Models\LeaveBalance::where('leave_type_id', 1)
+                ->whereHas('user', function ($query) {
+                    $query->whereNotIn('designation_id', [5, 9]); // 5: Intern, 9: Attachee
+                })
+                ->chunk(100, function ($leaveBalances) {
+                    foreach ($leaveBalances as $leaveBalance) {
+                        $leaveBalance->increment('allocated', 1.75);
+                        $leaveBalance->increment('balance', 1.75);
+                        $this->info("Updated Annual Leave for user_id: {$leaveBalance->user_id}. New Balance: {$leaveBalance->balance}");
+                    }
+                });
         }
 
         $this->info('Annual leave allocation completed.');

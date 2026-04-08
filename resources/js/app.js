@@ -60,6 +60,7 @@ import Payrolls from './components/payrolls/Payrolls.vue'
 import EmployeePayslips from './components/employee/EmployeePayslips.vue'
 import PayrollSettings from './components/payrolls/PayrollSettings.vue';
 import Tasks from './components/tasks/Tasks.vue'
+import SystemRequests from './components/tasks/SystemRequests.vue'
 import Disciplinary from './components/disciplinaries/Disciplinary.vue'
 import Settings from './components/settings/Settings.vue'
 import TelesalesReport from './components/performance/TelesalesReport.vue'
@@ -114,6 +115,7 @@ app.component('payrolls', Payrolls)
 app.component('payroll-settings', PayrollSettings)
 app.component('employee-payslips', EmployeePayslips)
 app.component('tasks', Tasks)
+app.component('system-requests', SystemRequests)
 app.component('resources', Resources)
 app.component('disciplinary', Disciplinary)
 app.component('settings', Settings)
