@@ -354,119 +354,9 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-
-// Fake Data
-const fakeJobs = [
-  { id: 1, title: 'Front-End Developer' },
-  { id: 2, title: 'Digital Marketer' },
-  { id: 3, title: 'HR Manager' },
-  { id: 4, title: 'Backend Engineer' },
-];
-
-const fakeUsers = [
-  { id: 1, name: 'Alice Smith' },
-  { id: 2, name: 'Bob Johnson' },
-];
-
-const fakeApplications = [
-  {
-    id: 1,
-    job_id: 1,
-    applicant_name: 'James Otieno',
-    applicant_email: 'james.otieno@example.com',
-    applicant_phone: '+254-712-345-678',
-    resume_path: '/files/resumes/james_resume.pdf',
-    cover_letter_path: '/files/cover_letters/james_cover.pdf',
-    portfolio_url: 'https://jamesotieno.dev',
-    status: 'under_review',
-    submitted_at: '2025-04-10T08:00:00Z',
-    source: 'Company Website',
-    notes: 'Strong Vue.js skills, needs to clarify experience with TypeScript.',
-    user_id: 1,
-    ai_score: 85,
-  },
-  {
-    id: 2,
-    job_id: 2,
-    applicant_name: 'Mercy Wanjiku',
-    applicant_email: 'mercy.wanjiku@example.com',
-    applicant_phone: '+254-723-456-789',
-    resume_path: '/files/resumes/mercy_resume.pdf',
-    cover_letter_path: null,
-    portfolio_url: 'https://linkedin.com/in/mercywanjiku',
-    status: 'interview_scheduled',
-    submitted_at: '2025-04-09T10:30:00Z',
-    source: 'Indeed',
-    notes: 'Excellent campaign management experience.',
-    user_id: 2,
-    ai_score: 91,
-  },
-  {
-    id: 3,
-    job_id: 3,
-    applicant_name: 'Peter Kimani',
-    applicant_email: 'peter.kimani@example.com',
-    applicant_phone: null,
-    resume_path: '/files/resumes/peter_resume.pdf',
-    cover_letter_path: '/files/cover_letters/peter_cover.pdf',
-    portfolio_url: null,
-    status: 'received',
-    submitted_at: '2025-04-08T14:15:00Z',
-    source: 'Referral',
-    notes: null,
-    user_id: null,
-    ai_score: 77,
-  },
-  {
-    id: 4,
-    job_id: 4,
-    applicant_name: 'Sarah Mumbi',
-    applicant_email: 'sarah.mumbi@example.com',
-    applicant_phone: '+254-734-567-890',
-    resume_path: null,
-    cover_letter_path: null,
-    portfolio_url: 'https://github.com/sarahmumbi',
-    status: 'offered',
-    submitted_at: '2025-04-07T09:00:00Z',
-    source: 'LinkedIn',
-    notes: 'Top candidate for Laravel expertise.',
-    user_id: 1,
-    ai_score: 93,
-  },
-  {
-    id: 5,
-    job_id: 1,
-    applicant_name: 'David Ochieng',
-    applicant_email: 'david.ochieng@example.com',
-    applicant_phone: '+254-745-678-901',
-    resume_path: '/files/resumes/david_resume.pdf',
-    cover_letter_path: '/files/cover_letters/david_cover.pdf',
-    portfolio_url: null,
-    status: 'rejected',
-    submitted_at: '2025-04-06T16:20:00Z',
-    source: 'Company Website',
-    notes: 'Lacks required experience in Vue 3.',
-    user_id: 2,
-    ai_score: 65,
-  },
-  {
-    id: 6,
-    job_id: 2,
-    applicant_name: 'Esther Njeri',
-    applicant_email: 'esther.njeri@example.com',
-    applicant_phone: null,
-    resume_path: '/files/resumes/esther_resume.pdf',
-    cover_letter_path: null,
-    portfolio_url: 'https://esthernjeri.com',
-    status: 'hired',
-    submitted_at: '2025-04-05T11:45:00Z',
-    source: 'Job Fair',
-    notes: 'Hired after exceptional interview performance.',
-    user_id: 1,
-    ai_score: 95,
-  },
-];
+import { onMounted, ref, computed } from 'vue';
+import toastr from 'toastr';
+import 'toastr/build/toastr.min.css';
 
 // Table headers
 const headers = [
@@ -483,36 +373,65 @@ const headers = [
 // Status options with display text
 const statusItems = [
   { text: 'All Statuses', value: '' },
-  { text: 'Received', value: 'received' },
-  { text: 'Under Review', value: 'under_review' },
-  { text: 'Interview Scheduled', value: 'interview_scheduled' },
-  { text: 'Offered', value: 'offered' },
+  { text: 'Pending', value: 'pending' },
+  { text: 'Shortlisted', value: 'shortlisted' },
   { text: 'Rejected', value: 'rejected' },
   { text: 'Hired', value: 'hired' },
 ];
 
 // State
-const applications = ref(fakeApplications);
+const applications = ref([]);
 const search = ref('');
 const statusFilter = ref('');
 const jobFilter = ref('');
-const sortKey = ref('submitted_at');
+const sortKey = ref('created_at');
 const sortDirection = ref('desc');
 const currentPage = ref(1);
-const itemsPerPage = 5;
+const itemsPerPage = 10;
 const selectedApplication = ref(null);
 const detailsDialog = ref(false);
 const statusDialog = ref(false);
 const newStatus = ref('');
-const jobItems = ref([{ title: 'All Jobs', id: '' }, ...fakeJobs]);
+const jobItems = ref([{ title: 'All Jobs', id: '' }]);
+const loading = ref(false);
+
+// Lifecycle
+onMounted(() => {
+  fetchApplications();
+  fetchJobs();
+});
+
+// APIs
+const fetchApplications = async () => {
+    loading.value = true;
+    try {
+        const response = await axios.get('/api/v1/recruitment/applications');
+        applications.value = response.data;
+    } catch (error) {
+        console.error('Error fetching applications:', error);
+    } finally {
+        loading.value = false;
+    }
+};
+
+const fetchJobs = async () => {
+    try {
+        const response = await axios.get('/api/v1/recruitment/jobs');
+        jobItems.value = [{ title: 'All Jobs', id: '' }, ...response.data];
+    } catch (error) {
+        console.error('Error fetching jobs:', error);
+    }
+};
 
 // Computed Properties
 const filteredApplications = computed(() => {
   return applications.value
     .filter((app) => {
+      const applicantName = app.applicant_name || '';
+      const applicantEmail = app.applicant_email || '';
       const matchesSearch =
-        app.applicant_name.toLowerCase().includes(search.value.toLowerCase()) ||
-        app.applicant_email.toLowerCase().includes(search.value.toLowerCase());
+        applicantName.toLowerCase().includes(search.value.toLowerCase()) ||
+        applicantEmail.toLowerCase().includes(search.value.toLowerCase());
       const matchesStatus = statusFilter.value ? app.status === statusFilter.value : true;
       const matchesJob = jobFilter.value ? app.job_id === parseInt(jobFilter.value) : true;
       return matchesSearch && matchesStatus && matchesJob;
@@ -521,16 +440,16 @@ const filteredApplications = computed(() => {
 
 // Methods
 const getJobTitle = (jobId) => {
-  const job = fakeJobs.find((j) => j.id === jobId);
+  const job = jobItems.value.find((j) => j.id === jobId);
   return job ? job.title : 'N/A';
 };
 
 const getUserName = (userId) => {
-  const user = fakeUsers.find((u) => u.id === userId);
-  return user ? user.name : null;
+  return null;
 };
 
 const formatDate = (date) => {
+  if (!date) return '-';
   return new Date(date).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
@@ -540,22 +459,18 @@ const formatDate = (date) => {
 
 const getStatusColor = (status) => {
   const colors = {
-    received: 'grey',
-    under_review: 'blue',
-    interview_scheduled: 'amber',
-    offered: 'light-green',
-    rejected: 'red',
-    hired: 'green',
+    pending: 'orange',
+    shortlisted: 'success',
+    rejected: 'error',
+    hired: 'primary',
   };
   return colors[status] || 'grey';
 };
 
 const getStatusText = (status) => {
   const text = {
-    received: 'Received',
-    under_review: 'Under Review',
-    interview_scheduled: 'Interview',
-    offered: 'Offered',
+    pending: 'Pending',
+    shortlisted: 'Shortlisted',
     rejected: 'Rejected',
     hired: 'Hired',
   };
@@ -581,11 +496,20 @@ const openStatusDialog = (application) => {
   statusDialog.value = true;
 };
 
-const updateStatus = () => {
+const updateStatus = async () => {
   if (selectedApplication.value && newStatus.value) {
-    selectedApplication.value.status = newStatus.value;
-    statusDialog.value = false;
-    // In a real application, you would send an API request to update the status
+    try {
+        await axios.put(`/api/v1/recruitment/applications/${selectedApplication.value.id}/status`, {
+            status: newStatus.value
+        });
+        selectedApplication.value.status = newStatus.value;
+        statusDialog.value = false;
+        toastr.success('Applicant status updated successfully');
+        fetchApplications();
+    } catch (error) {
+        console.error('Error updating status:', error);
+        toastr.error('Failed to update applicant status');
+    }
   }
 };
 </script>

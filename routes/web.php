@@ -39,6 +39,7 @@ use App\Http\Controllers\TaxesController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TimelineController;
 use App\Http\Controllers\TrainingController;
+use App\Http\Controllers\StaffDevelopmentController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UserAccountController;
 use App\Http\Controllers\UserController;
@@ -180,6 +181,9 @@ Route::group(['middleware' => ['auth']], function () {
 
     // performance
     Route::get('/performance-evaluations', [PerformanceController::class, 'performanceEvaluations'])->name('performance-evaluations');
+
+    // Staff Development (LMS) - available to all authenticated users
+    Route::get('/staff-development', [StaffDevelopmentController::class, 'index'])->name('staff-development');
 
 
 

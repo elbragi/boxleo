@@ -147,6 +147,10 @@ app.component('job-list', JobList);
 import ApplicationList from './components/recruitment/Applications/ApplicationList.vue';
 app.component('application-list', ApplicationList);
 
+// Staff Development (LMS)
+import StaffDevelopment from './components/staff-development/StaffDevelopment.vue';
+app.component('staff-development', StaffDevelopment);
+
 // Applicants
 import ApplicantList from './components/recruitment/Applicants/ApplicantList.vue';
 // import Shortlist from './components/recruitment/Applicants/Shortlist.vue';

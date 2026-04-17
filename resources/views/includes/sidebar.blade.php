@@ -166,6 +166,10 @@
 
 
                 <li>
+                    <a href="/staff-development"><i class="la la-graduation-cap"></i> <span>Staff Development</span></a>
+                </li>
+
+                <li>
                     <a href="/announcements"><i class="la la-bell"></i> <span>Announcements</span></a>
                 </li>
                 <li>
@@ -270,6 +274,9 @@
                 </li>
                 <li>
                     <a href="/employee-timeline"><i class="la la-book"></i> <span>Timeline & Updates</span></a>
+                </li>
+                <li>
+                    <a href="/staff-development"><i class="la la-graduation-cap"></i> <span>Staff Development</span></a>
                 </li>
             </ul>
             @endcan

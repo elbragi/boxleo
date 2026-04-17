@@ -37,6 +37,7 @@ use App\Http\Controllers\Api\PerformanceApiEvaluation;
 use App\Http\Controllers\Api\RequisitionApiController;
 use App\Http\Controllers\PerformanceApiReportController;
 use App\Http\Controllers\Api\UserDetailApiController;
+use App\Http\Controllers\Api\StaffDevelopmentApiController;
 
 
 
@@ -263,6 +264,14 @@ Route::middleware('auth:sanctum')->group(function () {
   // Performance report routes
   Route::post('v1/performance-reports/export', [PerformanceApiReportController::class, 'exportPerformanceEvaluations']);
   Route::post('v1/performance-reports/ranked-employees', [PerformanceApiReportController::class, 'exportRankedEmployees']);
+
+  // Recruitment
+  Route::get('v1/recruitment/jobs', [\App\Http\Controllers\Api\RecruitmentApiController::class, 'jobs']);
+  Route::post('v1/recruitment/jobs', [\App\Http\Controllers\Api\RecruitmentApiController::class, 'store']);
+  Route::put('v1/recruitment/jobs/{id}', [\App\Http\Controllers\Api\RecruitmentApiController::class, 'update']);
+  Route::get('v1/recruitment/applications', [\App\Http\Controllers\Api\RecruitmentApiController::class, 'applications']);
+  Route::get('v1/recruitment/dashboard', [\App\Http\Controllers\Api\RecruitmentApiController::class, 'dashboardMetrics']);
+  Route::put('v1/recruitment/applications/{id}/status', [\App\Http\Controllers\Api\RecruitmentApiController::class, 'updateStatus']);
 });
 
 Route::post('/v1/test-sms', [LeaveApiController::class, 'testSms']);
@@ -345,6 +354,41 @@ Route::group(['prefix' => 'v1/deductions'], function () {
 
   Route::post('/user-deductions', [UserDeductionController::class, 'store']);
   Route::put('/user-deductions/{userDeduction}', [UserDeductionController::class, 'update']);
+
+
+
+  // ─── Staff Development (LMS) ─────────────────────────────────────────────
+  Route::prefix('v1/staff-development')->group(function () {
+    // Stats
+    Route::get('/stats', [StaffDevelopmentApiController::class, 'stats']);
+
+    // Courses (browsing)
+    Route::get('/courses', [StaffDevelopmentApiController::class, 'courses']);
+    Route::get('/courses/{id}', [StaffDevelopmentApiController::class, 'courseDetail']);
+
+    // Admin: manage courses
+    Route::post('/courses', [StaffDevelopmentApiController::class, 'storeCourse']);
+    Route::put('/courses/{id}', [StaffDevelopmentApiController::class, 'updateCourse']);
+    Route::delete('/courses/{id}', [StaffDevelopmentApiController::class, 'deleteCourse']);
+    Route::post('/courses/{courseId}/lessons', [StaffDevelopmentApiController::class, 'storeLessons']);
+
+    // Enrollment
+    Route::post('/courses/{courseId}/enroll', [StaffDevelopmentApiController::class, 'enroll']);
+    Route::get('/my-courses', [StaffDevelopmentApiController::class, 'myCourses']);
+
+    // Lesson completion
+    Route::post('/lessons/{lessonId}/complete', [StaffDevelopmentApiController::class, 'completeLesson']);
+    Route::delete('/lessons/{lessonId}/complete', [StaffDevelopmentApiController::class, 'uncompleteLesson']);
+
+    // Certificates
+    Route::get('/my-certificates', [StaffDevelopmentApiController::class, 'myCertificates']);
+    Route::post('/enrollments/{enrollmentId}/certificate', [StaffDevelopmentApiController::class, 'uploadCertificate']);
+    Route::delete('/certificates/{id}', [StaffDevelopmentApiController::class, 'deleteCertificate']);
+
+    // Admin/HR views
+    Route::get('/team-certificates', [StaffDevelopmentApiController::class, 'teamCertificates']);
+    Route::get('/all-enrollments', [StaffDevelopmentApiController::class, 'allEnrollments']);
+  });
 
 });
 

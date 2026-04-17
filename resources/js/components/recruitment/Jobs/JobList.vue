@@ -403,6 +403,8 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import toastr from 'toastr';
+import 'toastr/build/toastr.min.css';
 
 // Form data
 const form = ref({
@@ -419,57 +421,6 @@ const form = ref({
   status: 'published',
 });
 
-// Table data
-const jobs = ref([
-  {
-    id: 1,
-    title: "Frontend Developer",
-    location: "New York, NY (Hybrid)",
-    department: "Tech",
-    postedDate: "2025-04-01",
-    applications: 24,
-    status: "published",
-    salary_min: 90000,
-    salary_max: 120000,
-  },
-  {
-    id: 2,
-    title: "HR Officer",
-    location: "Boston, MA (On-site)",
-    department: "Human Resources",
-    postedDate: "2025-03-28",
-    applications: 15,
-    status: "published",
-    salary_min: 65000,
-    salary_max: 85000,
-  },
-  {
-    id: 3,
-    title: "Marketing Specialist",
-    location: "Remote (US)",
-    department: "Marketing",
-    postedDate: "2025-04-10",
-    applications: 8,
-    status: "draft",
-    salary_min: 70000,
-    salary_max: 90000,
-  }
-]);
-
-// Stats
-const activeJobs = computed(() => jobs.value.filter(job => job.status === 'published').length);
-const totalApplications = computed(() => jobs.value.reduce((acc, job) => acc + job.applications, 0));
-const jobsThisMonth = computed(() => {
-  const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
-  return jobs.value.filter(job => {
-    const postedDate = new Date(job.postedDate);
-    return postedDate.getMonth() === currentMonth && postedDate.getFullYear() === currentYear;
-  }).length;
-});
-const openPositions = computed(() => jobs.value.filter(job => job.status === 'published').length);
-
 // UI States
 const showJobModal = ref(false);
 const showDeleteModal = ref(false);
@@ -483,42 +434,84 @@ const searchQuery = ref('');
 const departmentFilter = ref('');
 const statusFilter = ref('');
 
-// Form options
-const departments = ['Tech', 'Human Resources', 'Marketing', 'Finance', 'Operations', 'Sales'];
-const statuses = ['published', 'draft', 'closed'];
-
 // Table headers
 const headers = [
   { title: 'Title & Location', key: 'title', sortable: true },
-  { title: 'Department', key: 'department', sortable: true },
+  { title: 'Department', key: 'department.name', sortable: true },
   { title: 'Posted Date', key: 'postedDate', sortable: true },
   { title: 'Status', key: 'status', sortable: true },
   { title: 'Applications', key: 'applications', sortable: true },
   { title: 'Actions', key: 'actions', sortable: false }
 ];
 
-// Filtered jobs based on search and filters
+// State
+const jobs = ref([]);
+const loading = ref(false);
+const saving = ref(false);
+const departments = ref([]);
+const statuses = ['published', 'draft', 'closed'];
+
+// APIs
+const fetchJobs = async () => {
+    loading.value = true;
+    try {
+        const response = await axios.get('/api/v1/recruitment/jobs');
+        jobs.value = response.data.map(job => ({
+            ...job,
+            postedDate: job.created_at,
+            applications: job.job_applicants_count || 0
+        }));
+    } catch (error) {
+        console.error('Error fetching jobs:', error);
+    } finally {
+        loading.value = false;
+    }
+};
+
+const fetchDepartments = async () => {
+    try {
+        const response = await axios.get('/api/v1/departments');
+        departments.value = response.data.departments.map(d => d.name);
+    } catch (error) {
+        console.error('Error fetching departments:', error);
+    }
+};
+
+// Computed Properties
+const activeJobs = computed(() => jobs.value.filter(job => job.status === 'published').length);
+const totalApplications = computed(() => jobs.value.reduce((acc, job) => acc + (job.applications || 0), 0));
+const jobsThisMonth = computed(() => {
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  return jobs.value.filter(job => {
+    const postedDate = new Date(job.created_at);
+    return postedDate.getMonth() === currentMonth && postedDate.getFullYear() === currentYear;
+  }).length;
+});
+const openPositions = computed(() => jobs.value.filter(job => job.status === 'published').length);
+
 const filteredJobs = computed(() => {
   return jobs.value.filter(job => {
     const matchesSearch = !searchQuery.value || 
-      job.title.toLowerCase().includes(searchQuery.value.toLowerCase()) || 
-      job.department.toLowerCase().includes(searchQuery.value.toLowerCase());
+      job.title.toLowerCase().includes(searchQuery.value.toLowerCase());
     
-    const matchesDepartment = !departmentFilter.value || job.department === departmentFilter.value;
+    const matchesDepartment = !departmentFilter.value || (job.department && job.department.name === departmentFilter.value);
     const matchesStatus = !statusFilter.value || job.status === statusFilter.value;
     
     return matchesSearch && matchesDepartment && matchesStatus;
   });
 });
 
-// Format date
+// Helper Methods
 const formatDate = (dateString) => {
+  if (!dateString) return '-';
   const options = { year: 'numeric', month: 'short', day: 'numeric' };
   return new Date(dateString).toLocaleDateString(undefined, options);
 };
 
-// Get time ago from date
 const getTimeAgo = (dateString) => {
+  if (!dateString) return '';
   const date = new Date(dateString);
   const now = new Date();
   const diffTime = Math.abs(now - date);
@@ -531,7 +524,6 @@ const getTimeAgo = (dateString) => {
   return `${Math.floor(diffDays / 30)} months ago`;
 };
 
-// Get status color
 const getStatusColor = (status) => {
   switch (status) {
     case 'published': return 'success';
@@ -541,7 +533,7 @@ const getStatusColor = (status) => {
   }
 };
 
-// Edit job
+// UI Actions
 const editJob = (job) => {
   currentJobId.value = job.id;
   editingJob.value = true;
@@ -553,54 +545,42 @@ const editJob = (job) => {
   showJobModal.value = true;
 };
 
-// Save job
-const saveJob = () => {
-  if (editingJob.value) {
-    const index = jobs.value.findIndex(job => job.id === currentJobId.value);
-    if (index !== -1) {
-      jobs.value[index] = { ...jobs.value[index], ...form.value };
+const saveJob = async () => {
+  saving.value = true;
+  try {
+    let response;
+    if (editingJob.value) {
+      response = await axios.put(`/api/v1/recruitment/jobs/${currentJobId.value}`, form.value);
+      toastr.success('Job listing updated successfully');
+    } else {
+      response = await axios.post('/api/v1/recruitment/jobs', form.value);
+      toastr.success('New job listing created successfully');
     }
-  } else {
-    const newId = Math.max(0, ...jobs.value.map(job => job.id)) + 1;
-    const today = new Date().toISOString().split('T')[0];
     
-    jobs.value.push({
-      id: newId,
-      ...form.value,
-      postedDate: today,
-      applications: 0
-    });
+    await fetchJobs();
+    showJobModal.value = false;
+    resetForm();
+  } catch (error) {
+    console.error('Error saving job:', error);
+    toastr.error(error.response?.data?.message || 'Failed to save job listing');
+  } finally {
+    saving.value = false;
   }
-  
-  resetForm();
-  showJobModal.value = false;
 };
 
-// View applications
 const viewApplications = (job) => {
-  // Placeholder for viewing applications functionality
   console.log(`Viewing applications for job: ${job.title}`);
 };
 
-// Confirm delete
 const confirmDelete = (job) => {
   jobToDelete.value = job;
   showDeleteModal.value = true;
 };
 
-// Delete job
 const deleteJob = () => {
-  if (jobToDelete.value) {
-    const index = jobs.value.findIndex(job => job.id === jobToDelete.value.id);
-    if (index !== -1) {
-      jobs.value.splice(index, 1);
-    }
-    jobToDelete.value = null;
-    showDeleteModal.value = false;
-  }
+  showDeleteModal.value = false;
 };
 
-// Reset form
 const resetForm = () => {
   form.value = {
     title: '',
@@ -619,8 +599,9 @@ const resetForm = () => {
   currentJobId.value = null;
 };
 
-// Initialize component
+// Lifecycle
 onMounted(() => {
-  // Any initialization logic can go here
+  fetchJobs();
+  fetchDepartments();
 });
 </script>

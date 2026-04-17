@@ -37,12 +37,12 @@
       <v-col cols="12" md="3">
         <v-card class="mb-4" elevation="2" rounded="lg" color="#FFF8EF">
           <v-card-text>
-            <div class="text-overline text-blue-grey-darken-1">Technical Hiring</div>
+            <div class="text-overline text-blue-grey-darken-1">Applications</div>
             <div class="d-flex justify-space-between align-center">
-              <div class="text-h3 font-weight-bold">18</div>
-              <v-icon>mdi-arrow-right</v-icon>
+              <div class="text-h3 font-weight-bold">{{ metrics.total_applications }}</div>
+              <v-icon>mdi-account-group</v-icon>
             </div>
-            <div class="text-subtitle-1">Average Days to Hire</div>
+            <div class="text-subtitle-1">Total Received</div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -50,12 +50,12 @@
       <v-col cols="12" md="3">
         <v-card class="mb-4" elevation="2" rounded="lg" color="#EFFFEF">
           <v-card-text>
-            <div class="text-overline text-blue-grey-darken-1">Non-Technical Hiring</div>
+            <div class="text-overline text-blue-grey-darken-1">Open Roles</div>
             <div class="d-flex justify-space-between align-center">
-              <div class="text-h3 font-weight-bold">23</div>
-              <v-icon>mdi-arrow-right</v-icon>
+              <div class="text-h3 font-weight-bold">{{ metrics.total_jobs }}</div>
+              <v-icon>mdi-briefcase</v-icon>
             </div>
-            <div class="text-subtitle-1">Average Days to Hire</div>
+            <div class="text-subtitle-1">Active Listings</div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -63,12 +63,12 @@
       <v-col cols="12" md="3">
         <v-card class="mb-4" elevation="2" rounded="lg" color="#EFF8FF">
           <v-card-text>
-            <div class="text-overline text-blue-grey-darken-1">Technical Hiring</div>
+            <div class="text-overline text-blue-grey-darken-1">Processing</div>
             <div class="d-flex justify-space-between align-center">
-              <div class="text-h3 font-weight-bold">98%</div>
-              <v-icon>mdi-arrow-right</v-icon>
+              <div class="text-h3 font-weight-bold">{{ metrics.pending_applications }}</div>
+              <v-icon>mdi-timer-sand</v-icon>
             </div>
-            <div class="text-subtitle-1">Offer Acceptance Rate</div>
+            <div class="text-subtitle-1">Pending Review</div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -76,12 +76,12 @@
       <v-col cols="12" md="3">
         <v-card class="mb-4" elevation="2" rounded="lg" color="#FFF0F0">
           <v-card-text>
-            <div class="text-overline text-blue-grey-darken-1">Non-Technical Hiring</div>
+            <div class="text-overline text-blue-grey-darken-1">Shortlisted</div>
             <div class="d-flex justify-space-between align-center">
-              <div class="text-h3 font-weight-bold">99%</div>
-              <v-icon>mdi-arrow-right</v-icon>
+              <div class="text-h3 font-weight-bold">{{ metrics.shortlisted_applications }}</div>
+              <v-icon>mdi-account-check</v-icon>
             </div>
-            <div class="text-subtitle-1">Offer Acceptance Rate</div>
+            <div class="text-subtitle-1">Candidates</div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -274,6 +274,12 @@ export default {
   },
   data() {
     return {
+      metrics: {
+        total_applications: 0,
+        total_jobs: 0,
+        pending_applications: 0,
+        shortlisted_applications: 0,
+      },
       timeRange: 'quarter',
       chartOption: {
         tooltip: {
@@ -408,13 +414,7 @@ export default {
         { name: 'Zambia', flag: '/api/placeholder/30/30', cost: 14509, trend: 'down' },
         { name: 'Ethiopia', flag: '/api/placeholder/30/30', cost: 18450, trend: 'up' }
       ],
-      recentApplications: [
-        { id: 1, name: 'Alice Chen', position: 'UI/UX Designer', status: 'Interview', date: '2025-04-10', avatar: '/api/placeholder/32/32' },
-        { id: 2, name: 'Michael Brown', position: 'Software Engineer', status: 'Review', date: '2025-04-12', avatar: '/api/placeholder/32/32' },
-        { id: 3, name: 'Sarah Johnson', position: 'Product Manager', status: 'Shortlisted', date: '2025-04-12', avatar: '/api/placeholder/32/32' },
-        { id: 4, name: 'James Wilson', position: 'Data Analyst', status: 'Rejected', date: '2025-04-11', avatar: '/api/placeholder/32/32' },
-        { id: 5, name: 'Emma Davis', position: 'Marketing Specialist', status: 'Hired', date: '2025-04-09', avatar: '/api/placeholder/32/32' }
-      ],
+      recentApplications: [],
       recommendedJobs: [
         { id: 1, title: 'UX Designer', company: 'Maximax Team', icon: 'mdi-palette-outline', salary: '$14,000 - $25,000', location: 'London, England', type: 'Full-Time' },
         { id: 2, title: 'Senior UX Designer', company: 'Insyte Studios', icon: 'mdi-monitor-dashboard', salary: '$21,000 - $25,000', location: 'Manchester, England', type: 'Full-Time' },
@@ -422,14 +422,32 @@ export default {
       ]
     };
   },
+  mounted() {
+    this.fetchMetrics();
+  },
   methods: {
+    async fetchMetrics() {
+        try {
+            const response = await axios.get('/api/v1/recruitment/dashboard');
+            this.metrics = response.data;
+            this.recentApplications = response.data.recent_applications.map(app => ({
+                id: app.id,
+                name: app.name,
+                position: app.job ? app.job.title : 'N/A',
+                status: app.status,
+                date: new Date(app.created_at).toLocaleDateString(),
+                avatar: `https://ui-avatars.com/api/?name=${app.name}&background=random`
+            }));
+        } catch (error) {
+            console.error('Error fetching dashboard metrics:', error);
+        }
+    },
     getStatusColor(status) {
       const colors = {
-        'Interview': 'primary',
-        'Review': 'info',
-        'Shortlisted': 'success',
-        'Rejected': 'error',
-        'Hired': 'success'
+        'pending': 'orange',
+        'shortlisted': 'success',
+        'rejected': 'error',
+        'hired': 'primary',
       };
       return colors[status] || 'grey';
     }
