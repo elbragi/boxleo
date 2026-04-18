@@ -1,461 +1,334 @@
 <template>
-    <v-container fluid class="pa-6 bg-grey-lighten-4 min-vh-100">
-        <!-- Header Section -->
-        <v-row class="mb-6 align-center">
-            <v-col>
-                <div class="d-flex align-center mb-1">
-                    <v-icon color="primary" size="32" class="mr-3">mdi-calendar-check</v-icon>
-                    <h1 class="text-h4 font-weight-bold grey--text text--darken-3">Team Leave Approvals</h1>
+    <v-container fluid class="pa-4">
+
+        <!-- ── Page Header ───────────────────────────────────────────────── -->
+        <div class="tl-page-header mb-5">
+            <div>
+                <h2 class="tl-page-title">
+                    <v-icon color="primary" class="me-2" size="28">mdi-calendar-check</v-icon>
+                    Team Leave Approvals
+                </h2>
+                <p class="tl-page-sub">Review and manage leave requests from your team members</p>
+            </div>
+            <v-btn color="primary" variant="tonal" rounded prepend-icon="mdi-refresh"
+                :loading="loading" @click="fetchLeaves">
+                Refresh Data
+            </v-btn>
+        </div>
+
+        <!-- ── Stat Cards ────────────────────────────────────────────────── -->
+        <v-row class="mb-5">
+            <v-col cols="6" sm="3" v-for="card in statCards" :key="card.label">
+                <v-card class="tl-stat-card" elevation="0" rounded="xl">
+                    <div class="tl-stat-icon" :style="{ background: card.color }">
+                        <v-icon :icon="card.icon" color="white" size="22"/>
+                    </div>
+                    <div class="tl-stat-body">
+                        <div class="tl-stat-val">{{ card.value }}</div>
+                        <div class="tl-stat-lbl">{{ card.label }}</div>
+                    </div>
+                </v-card>
+            </v-col>
+        </v-row>
+
+        <!-- ── Filters ───────────────────────────────────────────────────── -->
+        <v-card elevation="0" rounded="xl" class="tl-filter-card mb-4">
+            <v-card-text>
+                <div class="tl-filter-title mb-3">
+                    <v-icon size="18" class="me-1">mdi-filter-variant</v-icon>
+                    Advanced Filters
                 </div>
-                <p class="text-subtitle-1 text-medium-emphasis ml-11">Review and manage leave requests from your team members</p>
-            </v-col>
-            <v-col cols="auto">
-                <v-btn color="primary" prepend-icon="mdi-refresh" variant="tonal" @click="fetchLeaves" :loading="isLoading">
-                    Refresh Data
-                </v-btn>
-            </v-col>
-        </v-row>
-
-        <!-- Stats Overview (Optional but premium) -->
-        <v-row class="mb-6">
-            <v-col cols="12" sm="6" md="3">
-                <v-card theme="dark" color="info" class="rounded-xl elevation-4 glass-card">
-                    <v-card-text class="d-flex align-center">
-                        <v-avatar color="white" rounded="lg" class="mr-4">
-                            <v-icon color="info">mdi-clock-outline</v-icon>
-                        </v-avatar>
-                        <div>
-                            <div class="text-h4 font-weight-bold">{{ pendingCount }}</div>
-                            <div class="text-caption text-uppercase font-weight-bold">Pending Requests</div>
-                        </div>
-                    </v-card-text>
-                </v-card>
-            </v-col>
-            <v-col cols="12" sm="6" md="3">
-                <v-card theme="dark" color="success" class="rounded-xl elevation-4 glass-card">
-                    <v-card-text class="d-flex align-center">
-                        <v-avatar color="white" rounded="lg" class="mr-4">
-                            <v-icon color="success">mdi-check-all</v-icon>
-                        </v-avatar>
-                        <div>
-                            <div class="text-h4 font-weight-bold">{{ approvedTodayCount }}</div>
-                            <div class="text-caption text-uppercase font-weight-bold">Approved Today</div>
-                        </div>
-                    </v-card-text>
-                </v-card>
-            </v-col>
-            <v-col cols="12" sm="6" md="3">
-                <v-card theme="dark" color="warning" class="rounded-xl elevation-4 glass-card">
-                    <v-card-text class="d-flex align-center">
-                        <v-avatar color="white" rounded="lg" class="mr-4">
-                            <v-icon color="warning">mdi-account-multiple</v-icon>
-                        </v-avatar>
-                        <div>
-                            <div class="text-h4 font-weight-bold">{{ distinctEmployeesCount }}</div>
-                            <div class="text-caption text-uppercase font-weight-bold">Active Employees</div>
-                        </div>
-                    </v-card-text>
-                </v-card>
-            </v-col>
-            <v-col cols="12" sm="6" md="3">
-                <v-card theme="dark" color="error" class="rounded-xl elevation-4 glass-card">
-                    <v-card-text class="d-flex align-center">
-                        <v-avatar color="white" rounded="lg" class="mr-4">
-                            <v-icon color="error">mdi-close-circle-outline</v-icon>
-                        </v-avatar>
-                        <div>
-                            <div class="text-h4 font-weight-bold">{{ cancelledCount }}</div>
-                            <div class="text-caption text-uppercase font-weight-bold">Cancelled</div>
-                        </div>
-                    </v-card-text>
-                </v-card>
-            </v-col>
-        </v-row>
-
-        <!-- Filter & Search Section -->
-        <v-card class="mb-6 rounded-xl elevation-2 overflow-hidden border-0">
-            <v-toolbar flat color="white" class="px-4 py-2 border-b">
-                <v-icon color="primary" class="mr-2">mdi-filter-variant</v-icon>
-                <v-toolbar-title class="font-weight-bold text-body-1">Advanced Filters</v-toolbar-title>
-                <v-spacer></v-spacer>
-                <v-btn icon="mdi-close-circle-outline" variant="text" color="grey" @click="resetFilters" v-if="hasActiveFilters">
-                    Clear Filters
-                </v-btn>
-            </v-toolbar>
-            
-            <v-card-text class="py-6 px-8">
-                <v-row dense>
+                <v-row align="center" dense>
                     <v-col cols="12" md="4">
-                        <v-text-field
-                            v-model="search"
-                            prepend-inner-icon="mdi-magnify"
-                            label="Search Employee or Leave Type"
-                            variant="outlined"
-                            density="comfortable"
-                            rounded="lg"
-                            hide-details
-                            class="modern-input"
-                            clearable
-                        ></v-text-field>
+                        <v-text-field v-model="search" prepend-inner-icon="mdi-magnify"
+                            label="Search Employee or Leave Type" density="compact"
+                            variant="outlined" rounded hide-details clearable/>
                     </v-col>
                     <v-col cols="12" sm="6" md="3">
-                        <v-select
-                            v-model="filters.application_date"
-                            :items="applicationDateOptions"
-                            label="Application Period"
-                            variant="outlined"
-                            density="comfortable"
-                            rounded="lg"
-                            hide-details
-                            prepend-inner-icon="mdi-calendar-range"
-                            class="modern-input"
-                            @update:model-value="submitFilters"
-                        ></v-select>
+                        <v-select v-model="form.application_date" :items="applicationDateOptions"
+                            label="Application Period" density="compact" variant="outlined"
+                            rounded hide-details prepend-inner-icon="mdi-calendar-range"/>
                     </v-col>
                     <v-col cols="12" sm="6" md="3">
-                        <v-select
-                            v-model="filters.status"
-                            :items="statusOptions"
-                            label="Filter by Status"
-                            variant="outlined"
-                            density="comfortable"
-                            rounded="lg"
-                            hide-details
-                            prepend-inner-icon="mdi-list-status"
-                            class="modern-input"
-                            @update:model-value="submitFilters"
-                        >
-                            <template v-slot:item="{ props, item }">
-                                <v-list-item v-bind="props">
-                                    <template v-slot:prepend>
-                                        <v-icon :color="getStatusColor(item.raw)" size="18" class="mr-2">
-                                            {{ getStatusIcon(item.raw) }}
-                                        </v-icon>
-                                    </template>
-                                </v-list-item>
-                            </template>
-                        </v-select>
+                        <v-select v-model="form.status" :items="statusOptions"
+                            label="Filter by Status" density="compact" variant="outlined"
+                            rounded hide-details prepend-inner-icon="mdi-filter-check-outline"/>
                     </v-col>
-                    <v-col cols="12" md="2" class="d-flex align-center">
-                        <v-btn block color="primary" height="48" rounded="lg" elevation="2" @click="submitFilters" class="font-weight-bold">
-                            Apply Filters
-                        </v-btn>
+                    <v-col cols="12" md="2">
+                        <v-btn color="primary" rounded block @click="filterLeaves">Apply Filters</v-btn>
                     </v-col>
                 </v-row>
             </v-card-text>
         </v-card>
 
-        <!-- Data Table Section -->
-        <v-card class="rounded-xl elevation-4 border-0 overflow-hidden">
+        <!-- ── Table ─────────────────────────────────────────────────────── -->
+        <v-card elevation="0" rounded="xl" class="tl-table-card">
             <v-data-table
                 :headers="tableHeaders"
-                :items="leaves"
+                :items="filteredLeaves"
                 :search="search"
-                :loading="isLoading"
-                hover
-                class="modern-table"
-                id="team-leaves-table"
-            >
-                <!-- Index Column -->
-                <template v-slot:item.id="{ index }">
-                    <span class="text-caption font-weight-bold grey--text">{{ index + 1 }}</span>
+                :loading="loading"
+                items-per-page-text="Items per page:"
+                rounded="xl"
+                hover>
+
+                <template #item.index="{ index }">
+                    <span class="text-caption text-grey">{{ index + 1 }}</span>
                 </template>
 
-                <!-- Employee Column -->
-                <template v-slot:item.user.firstname="{ item }">
-                    <div class="d-flex align-center py-3">
-                        <v-avatar size="38" color="primary" class="mr-3 elevation-1">
-                            <span class="text-subtitle-2 font-weight-bold text-white">{{ getInitials(item.user) }}</span>
+                <template #item.employee="{ item }">
+                    <div class="d-flex align-center gap-2 py-1">
+                        <v-avatar size="36" :color="avatarColor(item.user)" class="tl-avatar">
+                            <span class="text-caption font-weight-bold text-white">
+                                {{ initials(item.user) }}
+                            </span>
                         </v-avatar>
                         <div>
-                            <div class="font-weight-bold text-body-1">{{ getUserFullName(item.user) }}</div>
-                            <div class="text-caption text-medium-emphasis">{{ item.user.department || 'Operations' }}</div>
+                            <div class="font-weight-semibold text-body-2">{{ fullName(item.user) }}</div>
+                            <div class="text-caption text-grey">{{ item.user.department?.name || 'N/A' }}</div>
                         </div>
                     </div>
                 </template>
 
-                <!-- Leave Type Column -->
-                <template v-slot:item.leave_type.name="{ item }">
-                    <v-chip size="small" variant="tonal" class="font-weight-medium">
-                        {{ formatLeaveType(item.leave_type.name) }}
+                <template #item.leave_type="{ item }">
+                    <v-chip size="small" color="primary" variant="tonal" rounded label>
+                        {{ item.leave_type?.name?.replace('_', ' ') || 'N/A' }}
                     </v-chip>
                 </template>
 
-                <!-- Date Columns -->
-                <template v-slot:item.created_at="{ item }">
-                    <div class="text-body-2">{{ formatDateSimple(item.created_at) }}</div>
-                    <div class="text-caption text-disabled">{{ formatTime(item.created_at) }}</div>
+                <template #item.requested_on="{ item }">
+                    <div class="text-body-2">{{ formatDate(item.created_at) }}</div>
+                    <div class="text-caption text-grey">{{ formatTime(item.created_at) }}</div>
                 </template>
 
-                <template v-slot:item.period="{ item }">
-                    <div class="d-flex align-center">
-                        <div class="text-center mr-2">
-                            <div class="text-caption font-weight-bold text-uppercase grey--text">From</div>
-                            <div class="text-body-2">{{ item.from }}</div>
+                <template #item.period="{ item }">
+                    <div class="d-flex align-center gap-1 text-body-2">
+                        <div>
+                            <div class="text-caption text-grey font-weight-medium">FROM</div>
+                            <div class="font-weight-semibold">{{ item.from }}</div>
                         </div>
-                        <v-icon color="grey-lighten-1" size="20">mdi-arrow-right</v-icon>
-                        <div class="text-center ml-2">
-                            <div class="text-caption font-weight-bold text-uppercase grey--text">To</div>
-                            <div class="text-body-2">{{ item.to }}</div>
+                        <v-icon size="16" color="grey" class="mx-1">mdi-arrow-right</v-icon>
+                        <div>
+                            <div class="text-caption text-grey font-weight-medium">TO</div>
+                            <div class="font-weight-semibold">{{ item.to }}</div>
                         </div>
                     </div>
                 </template>
 
-                <!-- Status Column -->
-                <template v-slot:item.status="{ item }">
-                    <v-chip
-                        :color="getStatusColor(item.status)"
-                        size="small"
-                        class="font-weight-bold text-uppercase"
-                        variant="flat"
-                    >
-                        <v-icon start size="14">{{ getStatusIcon(item.status) }}</v-icon>
-                        {{ item.status }}
+                <template #item.status="{ item }">
+                    <v-chip :color="statusColor(item.status)" size="small" rounded variant="flat">
+                        <v-icon start size="12">{{ statusIcon(item.status) }}</v-icon>
+                        {{ item.status.toUpperCase() }}
                     </v-chip>
                 </template>
 
-                <!-- Actions Column -->
-                <template v-slot:item.actions="{ item }">
-                    <div class="d-flex justify-center">
+                <template #item.actions="{ item }">
+                    <div class="d-flex align-center gap-1">
                         <v-tooltip text="View Logs" location="top">
-                            <template v-slot:activator="{ props }">
-                                <v-btn v-bind="props" icon="mdi-history" size="x-small" color="info" variant="text" class="mr-1" @click="openLogsModal(item)"></v-btn>
+                            <template #activator="{ props }">
+                                <v-btn v-bind="props" icon size="x-small" variant="text" color="info"
+                                    @click="openLogsModal(item)">
+                                    <v-icon size="18">mdi-history</v-icon>
+                                </v-btn>
                             </template>
                         </v-tooltip>
-                        
-                        <v-tooltip text="Approve Preview" location="top">
-                            <template v-slot:activator="{ props }">
-                                <v-btn v-bind="props" icon="mdi-eye-outline" size="x-small" color="primary" variant="text" class="mr-1" @click="viewLeave(item)"></v-btn>
+                        <v-tooltip text="View Details" location="top">
+                            <template #activator="{ props }">
+                                <v-btn v-bind="props" icon size="x-small" variant="text" color="primary"
+                                    @click="viewLeave(item)">
+                                    <v-icon size="18">mdi-eye-outline</v-icon>
+                                </v-btn>
                             </template>
                         </v-tooltip>
+                        <v-tooltip v-if="item.status === 'Pending'" text="Approve" location="top">
+                            <template #activator="{ props }">
+                                <v-btn v-bind="props" icon size="x-small" variant="text" color="success"
+                                    @click="approveLeave(item)">
+                                    <v-icon size="18">mdi-check-circle-outline</v-icon>
+                                </v-btn>
+                            </template>
+                        </v-tooltip>
+                        <v-tooltip v-if="item.status === 'Pending'" text="Reject" location="top">
+                            <template #activator="{ props }">
+                                <v-btn v-bind="props" icon size="x-small" variant="text" color="error"
+                                    @click="cancelLeave(item)">
+                                    <v-icon size="18">mdi-close-circle-outline</v-icon>
+                                </v-btn>
+                            </template>
+                        </v-tooltip>
+                    </div>
+                </template>
 
-                        <v-fade-transition>
-                            <div v-if="item.status === 'Pending'" class="d-flex">
-                                <v-tooltip text="Quick Approve" location="top">
-                                    <template v-slot:activator="{ props }">
-                                        <v-btn v-bind="props" icon="mdi-check-circle" size="x-small" color="success" variant="tonal" class="mr-1 shadow-sm" @click="approveLeave(item)"></v-btn>
-                                    </template>
-                                </v-tooltip>
-                                <v-tooltip text="Reject/Cancel" location="top">
-                                    <template v-slot:activator="{ props }">
-                                        <v-btn v-bind="props" icon="mdi-close-circle" size="x-small" color="error" variant="tonal" @click="cancelLeave(item)"></v-btn>
-                                    </template>
-                                </v-tooltip>
-                            </div>
-                        </v-fade-transition>
+                <template #no-data>
+                    <div class="tl-empty py-10">
+                        <v-icon size="52" color="grey-lighten-2">mdi-calendar-remove-outline</v-icon>
+                        <p class="text-grey mt-2">No leave requests found.</p>
                     </div>
                 </template>
             </v-data-table>
         </v-card>
 
-        <!-- Modals/Dialogs -->
-        <!-- View Leave Dialog -->
-        <v-dialog v-model="viewLeaveModal" max-width="650px" transition="dialog-bottom-transition">
-            <v-card class="rounded-xl overflow-hidden elevation-24">
-                <v-toolbar color="primary" theme="dark" flat>
-                    <v-icon start class="ml-4">mdi-card-text-outline</v-icon>
-                    <v-toolbar-title class="font-weight-bold">Leave Request Details</v-toolbar-title>
-                    <v-spacer></v-spacer>
-                    <v-btn icon="mdi-close" variant="text" @click="closeLeaveViewModal"></v-btn>
-                </v-toolbar>
-                
-                <v-card-text class="pa-8" v-if="selectedItem">
-                    <div class="d-flex align-center mb-8 bg-blue-lighten-5 pa-4 rounded-lg">
-                        <v-avatar size="64" color="primary" class="mr-4 elevation-2">
-                            <span class="text-h5 font-weight-bold text-white">{{ getInitials(selectedItem.user) }}</span>
-                        </v-avatar>
-                        <div>
-                            <h3 class="text-h5 font-weight-bold text-grey-darken-3">{{ getUserFullName(selectedItem.user) }}</h3>
-                            <div class="text-subtitle-1 text-primary">{{ selectedItem.user.department || 'Operations' }}</div>
-                        </div>
-                        <v-spacer></v-spacer>
-                        <v-chip :color="getStatusColor(selectedItem.status)" variant="flat" class="elevation-1">
-                            {{ selectedItem.status }}
-                        </v-chip>
-                    </div>
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- DIALOGS                                                        -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
 
-                    <v-row>
-                        <v-col cols="12" sm="6">
-                            <div class="mb-6">
-                                <div class="text-overline text-grey-darken-1 mb-1">Leave Category</div>
-                                <div class="text-body-1 font-weight-bold d-flex align-center">
-                                    <v-icon start color="primary" size="20">mdi-beach</v-icon>
-                                    {{ formatLeaveType(selectedItem.leave_type.name) }}
+        <!-- View Leave Details -->
+        <v-dialog v-model="viewLeaveModal" max-width="520">
+            <v-card v-if="selectedItem" rounded="xl">
+                <div class="tl-dialog-header">
+                    <v-avatar size="48" :color="avatarColor(selectedItem.user)">
+                        <span class="text-white font-weight-bold">{{ initials(selectedItem.user) }}</span>
+                    </v-avatar>
+                    <div class="ms-3">
+                        <div class="text-h6 font-weight-bold text-white">{{ fullName(selectedItem.user) }}</div>
+                        <div class="text-caption" style="opacity:0.8">
+                            {{ selectedItem.leave_type?.name?.replace('_', ' ') }}
+                        </div>
+                    </div>
+                    <v-spacer/>
+                    <v-btn icon="mdi-close" variant="text" color="white" size="small" @click="viewLeaveModal=false"/>
+                </div>
+
+                <v-card-text class="pa-5">
+                    <v-row dense>
+                        <v-col cols="6" v-for="detail in leaveDetails" :key="detail.label">
+                            <div class="tl-detail-item">
+                                <div class="tl-detail-label">
+                                    <v-icon :color="detail.color" size="15" class="me-1">{{ detail.icon }}</v-icon>
+                                    {{ detail.label }}
                                 </div>
-                            </div>
-                            <div class="mb-6">
-                                <div class="text-overline text-grey-darken-1 mb-1">Duration</div>
-                                <div class="text-body-1 font-weight-bold d-flex align-center">
-                                    <v-icon start color="indigo" size="20">mdi-calendar-range</v-icon>
-                                    {{ selectedItem.days }} Working Days
-                                </div>
-                            </div>
-                        </v-col>
-                        <v-col cols="12" sm="6">
-                            <div class="mb-6">
-                                <div class="text-overline text-grey-darken-1 mb-1">Period</div>
-                                <div class="text-body-1 font-weight-bold d-flex align-center">
-                                    <v-icon start color="success" size="20">mdi-clock-out</v-icon>
-                                    {{ selectedItem.from }} ➜ {{ selectedItem.to }}
-                                </div>
-                            </div>
-                            <div class="mb-6">
-                                <div class="text-overline text-grey-darken-1 mb-1">Contact Phone</div>
-                                <div class="text-body-1 font-weight-bold d-flex align-center">
-                                    <v-icon start color="teal" size="20">mdi-phone-outline</v-icon>
-                                    {{ selectedItem.phone || 'N/A' }}
-                                </div>
+                                <div class="tl-detail-val">{{ detail.value }}</div>
                             </div>
                         </v-col>
                     </v-row>
 
-                    <v-divider class="my-4"></v-divider>
-
-                    <div class="mt-4">
-                        <div class="text-overline text-grey-darken-1 mb-1">Employee Comment</div>
-                        <v-alert
-                            variant="tonal"
-                            color="grey-darken-2"
-                            rounded="lg"
-                            class="border-opacity-10"
-                        >
-                            {{ selectedItem.comment || 'No comment provided by the employee.' }}
-                        </v-alert>
+                    <div v-if="selectedItem.comment" class="tl-comment-box mt-3">
+                        <div class="text-caption font-weight-medium mb-1 text-grey">Employee Comment</div>
+                        <p class="text-body-2">{{ selectedItem.comment }}</p>
                     </div>
                 </v-card-text>
 
-                <v-divider></v-divider>
-                
-                <v-card-actions class="pa-6 justify-end bg-grey-lighten-5">
-                    <v-btn variant="text" color="grey-darken-1" @click="closeLeaveViewModal" class="px-6 mr-2 font-weight-bold">Dismiss</v-btn>
-                    <v-fade-transition>
-                        <div v-if="selectedItem && selectedItem.status === 'Pending'">
-                            <v-btn color="error" variant="tonal" class="px-6 mr-2 font-weight-bold" @click="closeLeaveViewModal(); cancelLeave(selectedItem)">Reject</v-btn>
-                            <v-btn color="primary" class="px-8 font-weight-bold elevation-2" @click="closeLeaveViewModal(); approveLeave(selectedItem)">Approve Request</v-btn>
-                        </div>
-                    </v-fade-transition>
+                <v-divider/>
+                <v-card-actions class="pa-4 justify-space-between">
+                    <div class="d-flex gap-2">
+                        <v-btn v-if="selectedItem.status === 'Pending'" color="success" rounded size="small"
+                            @click="viewLeaveModal=false; approveLeave(selectedItem)">
+                            <v-icon start>mdi-check</v-icon>Approve
+                        </v-btn>
+                        <v-btn v-if="selectedItem.status === 'Pending'" color="error" variant="outlined" rounded size="small"
+                            @click="viewLeaveModal=false; cancelLeave(selectedItem)">
+                            <v-icon start>mdi-close</v-icon>Reject
+                        </v-btn>
+                    </div>
+                    <v-btn variant="text" rounded @click="viewLeaveModal=false">Close</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
 
-        <!-- Log Dialog -->
-        <v-dialog v-model="logsModal" max-width="500px" transition="dialog-fade-transition">
-            <v-card class="rounded-xl elevation-24">
-                <v-card-title class="pa-6 bg-info text-white d-flex align-center">
-                    <v-icon size="32" class="mr-4">mdi-timeline-text-outline</v-icon>
-                    <div>
-                        <div class="text-h6 font-weight-bold">Audit Logs</div>
-                        <div class="text-caption text-white-opacity-80">Track the lifecycle of this leave request</div>
-                    </div>
+        <!-- Approve Leave -->
+        <v-dialog v-model="approveLeaveModal" max-width="440">
+            <v-card rounded="xl">
+                <v-card-title class="pa-5 d-flex align-center gap-2">
+                    <v-icon color="success" size="24">mdi-check-circle-outline</v-icon>
+                    Approve Leave Request
                 </v-card-title>
-                
-                <v-card-text class="pa-0">
-                    <v-list class="pa-4 bg-transparent" lines="three">
-                        <v-list-item v-for="(log, index) in logs" :key="index" class="mb-2 log-item">
-                            <template v-slot:prepend>
-                                <v-avatar color="info lighten-5" size="40">
-                                    <v-icon color="info" size="20">mdi-account-clock</v-icon>
-                                </v-avatar>
-                            </template>
-                            <v-list-item-title class="font-weight-bold text-body-1">{{ log.action }}</v-list-item-title>
-                            <v-list-item-subtitle class="mt-1">
-                                <div class="d-flex align-center mb-1">
-                                    <v-icon size="14" class="mr-1 text-info">mdi-account-outline</v-icon>
-                                    <span>{{ log.user }}</span>
-                                </div>
-                                <div class="d-flex align-center">
-                                    <v-icon size="14" class="mr-1 text-grey">mdi-clock-outline</v-icon>
-                                    <span>{{ log.time }}</span>
-                                </div>
-                            </v-list-item-subtitle>
-                            <v-divider class="mt-4" v-if="index < logs.length - 1"></v-divider>
-                        </v-list-item>
-                        <div v-if="logs.length === 0" class="text-center py-12">
-                            <v-icon size="64" color="grey-lighten-2">mdi-history-off</v-icon>
-                            <div class="text-body-2 text-medium-emphasis mt-2">No activity logs found</div>
-                        </div>
-                    </v-list>
+                <v-divider/>
+                <v-card-text class="pa-5">
+                    <p class="text-body-2 mb-4">
+                        Approve leave for <strong>{{ selectedItem ? fullName(selectedItem.user) : '' }}</strong>?
+                    </p>
+                    <v-textarea v-model="approveNotes" label="Notes (optional)" variant="outlined"
+                        density="compact" rounded rows="3" hint="Add any comments for the record"/>
                 </v-card-text>
-                
-                <v-divider></v-divider>
-                <v-card-actions class="pa-4 bg-grey-lighten-5">
-                    <v-spacer></v-spacer>
-                    <v-btn color="grey-darken-1" variant="text" class="px-6" @click="closeLogsModal">Close</v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
-
-        <!-- Dynamic Action Confirmations -->
-        <v-dialog v-model="approveLeaveModal" max-width="500px">
-            <v-card class="rounded-xl elevation-24 overflow-hidden">
-                <v-card-title class="bg-success text-white py-6 text-center">
-                    <v-icon size="48" class="mb-2">mdi-check-decagram</v-icon>
-                    <h3 class="text-h5 font-weight-bold">Confirm Approval</h3>
-                </v-card-title>
-                <v-card-text class="pa-8 text-center">
-                    <p class="text-body-1 mb-6">Are you sure you want to approve the leave request from <br><strong>{{ selectedItem?.user ? getUserFullName(selectedItem.user) : '' }}</strong>?</p>
-                    <v-textarea v-model="approveNotes" label="Add a note (optional)" variant="outlined" rounded="lg" hide-details class="modern-input"></v-textarea>
-                </v-card-text>
-                <v-card-actions class="px-8 pb-8 pt-0 d-flex gap-2">
-                    <v-btn block size="large" variant="flat" color="success" class="font-weight-bold rounded-lg elevation-2 flex-grow-1" :loading="isSubmittingAction" @click="approveLeaveAction">
+                <v-divider/>
+                <v-card-actions class="pa-4">
+                    <v-spacer/>
+                    <v-btn variant="text" rounded @click="approveLeaveModal=false">Cancel</v-btn>
+                    <v-btn color="success" rounded :loading="actioning" @click="approveLeaveAction">
                         Yes, Approve
                     </v-btn>
-                    <v-btn block size="large" variant="tonal" color="grey" class="font-weight-bold rounded-lg flex-grow-1" @click="closeApproveLeaveModal">
-                        Cancel
-                    </v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
 
-        <v-dialog v-model="cancelLeaveModal" max-width="500px">
-            <v-card class="rounded-xl elevation-24 overflow-hidden">
-                <v-card-title class="bg-error text-white py-6 text-center">
-                    <v-icon size="48" class="mb-2">mdi-alert-circle</v-icon>
-                    <h3 class="text-h5 font-weight-bold">Confirm Rejection</h3>
+        <!-- Cancel / Reject Leave -->
+        <v-dialog v-model="cancelLeaveModal" max-width="440">
+            <v-card rounded="xl">
+                <v-card-title class="pa-5 d-flex align-center gap-2">
+                    <v-icon color="error" size="24">mdi-close-circle-outline</v-icon>
+                    Reject Leave Request
                 </v-card-title>
-                <v-card-text class="pa-8 text-center">
-                    <p class="text-body-1 mb-6">Provide a reason for cancelling the leave request for <br><strong>{{ selectedItem?.user ? getUserFullName(selectedItem.user) : '' }}</strong>.</p>
-                    <v-textarea v-model="cancelNotes" label="Reason for cancellation" variant="outlined" rounded="lg" persistent-placeholder placeholder="e.g., Short-staffed on these dates" class="modern-input"></v-textarea>
+                <v-divider/>
+                <v-card-text class="pa-5">
+                    <p class="text-body-2 mb-4">
+                        Reject leave for <strong>{{ selectedItem ? fullName(selectedItem.user) : '' }}</strong>?
+                    </p>
+                    <v-textarea v-model="cancelNotes" label="Reason for rejection" variant="outlined"
+                        density="compact" rounded rows="3" hint="This will be visible to the employee"/>
                 </v-card-text>
-                <v-card-actions class="px-8 pb-8 pt-0 d-flex gap-2">
-                    <v-btn block size="large" variant="flat" color="error" class="font-weight-bold rounded-lg elevation-2 flex-grow-1" :loading="isSubmittingAction" :disabled="!cancelNotes" @click="cancelLeaveAction">
-                        Confirm Rejection
-                    </v-btn>
-                    <v-btn block size="large" variant="tonal" color="grey" class="font-weight-bold rounded-lg flex-grow-1" @click="closeCancelLeaveModal">
-                        Cancel
+                <v-divider/>
+                <v-card-actions class="pa-4">
+                    <v-spacer/>
+                    <v-btn variant="text" rounded @click="cancelLeaveModal=false">Cancel</v-btn>
+                    <v-btn color="error" rounded :loading="actioning" @click="cancelLeaveAction">
+                        Yes, Reject
                     </v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
 
-        <!-- Notification Snackbar -->
-        <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="3000" rounded="pill" elevation="12">
-            <div class="d-flex align-center">
-                <v-icon start size="20" class="mr-2">{{ snackbar.icon }}</v-icon>
-                <span class="font-weight-bold">{{ snackbar.text }}</span>
-            </div>
+        <!-- View Logs -->
+        <v-dialog v-model="logsModal" max-width="500">
+            <v-card rounded="xl">
+                <v-card-title class="pa-5 d-flex align-center gap-2">
+                    <v-icon color="primary">mdi-history</v-icon>
+                    Activity Logs
+                </v-card-title>
+                <v-divider/>
+                <v-card-text class="pa-4">
+                    <div v-if="logs.length === 0" class="text-center text-grey py-6">
+                        <v-icon size="40" color="grey-lighten-2">mdi-timeline-outline</v-icon>
+                        <p class="mt-2">No logs available.</p>
+                    </div>
+                    <v-timeline v-else density="compact" side="end" truncate-line="both">
+                        <v-timeline-item v-for="(log, i) in logs" :key="i" size="x-small" dot-color="primary">
+                            <div class="text-body-2 font-weight-semibold">{{ log.action }}</div>
+                            <div class="text-caption text-grey">{{ log.user }} &bull; {{ log.time }}</div>
+                        </v-timeline-item>
+                    </v-timeline>
+                </v-card-text>
+                <v-divider/>
+                <v-card-actions class="pa-4 justify-end">
+                    <v-btn variant="text" rounded @click="logsModal=false">Close</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
+        <!-- Snackbar -->
+        <v-snackbar v-model="snackbar.show" :color="snackbar.color" rounded="xl" location="bottom right">
+            <v-icon class="me-2">{{ snackbar.color === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle' }}</v-icon>
+            {{ snackbar.text }}
         </v-snackbar>
+
     </v-container>
 </template>
 
 <script>
-import axios from 'axios';
-
 export default {
-    name: 'TeamLeaves',
     props: {
-        userId: {
-            type: [Number, String],
-            required: true
-        }
+        userId: { type: [Number, String], required: true }
     },
 
     data() {
         return {
-            base_url: '/',
-            isLoading: false,
-            isSubmittingAction: false,
+            loading: false,
+            actioning: false,
+            leaves: [],
+            allLeaves: [],
             search: '',
+            form: { application_date: 'Last Week', status: 'Pending' },
+            applicationDateOptions: ['All', 'Today', 'Current Week', 'Last Week', 'Current Month', 'Current Year'],
+            statusOptions: ['All', 'Pending', 'Approved', 'Cancelled', 'Hr Approved'],
             viewLeaveModal: false,
             approveLeaveModal: false,
             cancelLeaveModal: false,
@@ -464,281 +337,221 @@ export default {
             approveNotes: '',
             cancelNotes: '',
             logs: [],
-            leaves: [],
-            allLeaves: [],
-            filters: {
-                application_date: 'All',
-                status: 'All'
-            },
-            applicationDateOptions: ['All', 'Today', 'Current Week', 'Last Week', 'Current Month', 'Current Year'],
-            statusOptions: ['All', 'Approved', 'Pending', 'Cancelled', 'Hr Approved'],
-            snackbar: {
-                show: false,
-                text: '',
-                color: 'success',
-                icon: 'mdi-check-circle'
-            },
+            snackbar: { show: false, text: '', color: 'success' },
             tableHeaders: [
-                { title: '#', key: 'id', sortable: false, width: '50px' },
-                { title: 'Employee', key: 'user.firstname', align: 'start', sortable: true },
-                { title: 'Leave Category', key: 'leave_type.name', sortable: true },
-                { title: 'Requested On', key: 'created_at', sortable: true },
+                { title: '#', key: 'index', sortable: false, width: '50px' },
+                { title: 'Employee', key: 'employee', sortable: false },
+                { title: 'Leave Category', key: 'leave_type', sortable: false },
+                { title: 'Requested On', key: 'requested_on', sortable: false },
                 { title: 'Period', key: 'period', sortable: false },
-                { title: 'Status', key: 'status', align: 'center', sortable: true },
-                { title: 'Actions', key: 'actions', align: 'center', sortable: false }
-            ]
-        };
-    },
-
-    created() {
-        this.fetchLeaves();
+                { title: 'Status', key: 'status' },
+                { title: 'Actions', key: 'actions', sortable: false, align: 'center' },
+            ],
+        }
     },
 
     computed: {
-        pendingCount() {
-            return this.allLeaves.filter(l => l.status === 'Pending').length;
+        filteredLeaves() {
+            return this.leaves
         },
-        approvedTodayCount() {
-            const today = new Date().toDateString();
-            return this.allLeaves.filter(l => 
-                l.status === 'Approved' && 
-                new Date(l.updated_at || l.created_at).toDateString() === today
-            ).length;
+
+        statCards() {
+            const total = this.allLeaves.length
+            const pending = this.allLeaves.filter(l => l.status === 'Pending').length
+            const approved = this.allLeaves.filter(l => l.status === 'Approved' || l.status === 'Hr Approved').length
+            const rejected = this.allLeaves.filter(l => l.status === 'Cancelled').length
+            return [
+                { label: 'Pending Requests', value: pending, icon: 'mdi-clock-outline', color: '#f59e0b' },
+                { label: 'Approved', value: approved, icon: 'mdi-check-circle-outline', color: '#10b981' },
+                { label: 'Total Requests', value: total, icon: 'mdi-account-group-outline', color: '#6366f1' },
+                { label: 'Rejected', value: rejected, icon: 'mdi-close-circle-outline', color: '#ef4444' },
+            ]
         },
-        cancelledCount() {
-            return this.allLeaves.filter(l => l.status === 'Cancelled').length;
+
+        leaveDetails() {
+            if (!this.selectedItem) return []
+            return [
+                { label: 'From', value: this.selectedItem.from, icon: 'mdi-calendar-start', color: 'success' },
+                { label: 'To', value: this.selectedItem.to, icon: 'mdi-calendar-end', color: 'error' },
+                { label: 'Days', value: this.selectedItem.days ?? 'N/A', icon: 'mdi-calendar-star', color: 'indigo' },
+                { label: 'Applied On', value: this.formatDate(this.selectedItem.created_at), icon: 'mdi-calendar-clock', color: 'primary' },
+                { label: 'Status', value: this.selectedItem.status, icon: 'mdi-information-outline', color: this.statusColor(this.selectedItem.status) },
+                { label: 'Department', value: this.selectedItem.user?.department?.name || 'N/A', icon: 'mdi-office-building', color: 'purple' },
+            ]
         },
-        distinctEmployeesCount() {
-            return new Set(this.allLeaves.map(l => l.user_id)).size;
-        },
-        hasActiveFilters() {
-            return this.filters.application_date !== 'All' || this.filters.status !== 'All' || this.search !== '';
-        }
+    },
+
+    created() {
+        this.fetchLeaves()
     },
 
     methods: {
         async fetchLeaves() {
-            this.isLoading = true;
+            this.loading = true
             try {
-                const formData = new FormData();
-                formData.append('userId', this.userId);
-                const response = await axios.post(`${this.base_url}api/v1/team-leaves`, formData);
-                this.allLeaves = response.data.leaves || [];
-                this.applyClientFilters();
-            } catch (error) {
-                this.showNotify('Error loading leave data', 'error', 'mdi-alert');
-            } finally {
-                this.isLoading = false;
+                const { data } = await axios.post('api/v1/team-leaves', { userId: this.userId })
+                this.allLeaves = data.leaves
+                this.leaves = data.leaves
+                this.filterLeaves()
+            } catch {
+                this.showSnack('Failed to load leave requests', 'error')
             }
+            this.loading = false
         },
 
-        submitFilters() {
-            this.applyClientFilters();
-        },
+        filterLeaves() {
+            let filtered = [...this.allLeaves]
 
-        resetFilters() {
-            this.filters.application_date = 'All';
-            this.filters.status = 'All';
-            this.search = '';
-            this.applyClientFilters();
-        },
-
-        applyClientFilters() {
-            let filtered = [...this.allLeaves];
-
-            if (this.filters.status !== 'All') {
-                filtered = filtered.filter(l => l.status === this.filters.status);
+            if (this.form.status && this.form.status !== 'All') {
+                filtered = filtered.filter(l => l.status === this.form.status)
             }
 
-            if (this.filters.application_date !== 'All') {
-                const now = new Date();
-                filtered = filtered.filter(leave => {
-                    const leaveDate = new Date(leave.created_at);
-                    switch (this.filters.application_date) {
-                        case 'Today': return leaveDate.toDateString() === now.toDateString();
-                        case 'Current Week': 
-                            const ws = new Date(now.setDate(now.getDate() - now.getDay()));
-                            const we = new Date(now.setDate(ws.getDate() + 6));
-                            return leaveDate >= ws && leaveDate <= we;
-                        case 'Current Month': return leaveDate.getMonth() === now.getMonth() && leaveDate.getFullYear() === now.getFullYear();
-                        case 'Current Year': return leaveDate.getFullYear() === now.getFullYear();
-                        default: return true;
+            if (this.form.application_date && this.form.application_date !== 'All') {
+                const now = new Date()
+                filtered = filtered.filter(l => {
+                    const d = new Date(l.created_at)
+                    if (this.form.application_date === 'Today') return d.toDateString() === now.toDateString()
+                    if (this.form.application_date === 'Current Week') {
+                        const start = new Date(now); start.setDate(now.getDate() - now.getDay())
+                        const end = new Date(start); end.setDate(start.getDate() + 6)
+                        return d >= start && d <= end
                     }
-                });
+                    if (this.form.application_date === 'Last Week') {
+                        const start = new Date(now); start.setDate(now.getDate() - now.getDay() - 7)
+                        const end = new Date(start); end.setDate(start.getDate() + 6)
+                        return d >= start && d <= end
+                    }
+                    if (this.form.application_date === 'Current Month')
+                        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+                    if (this.form.application_date === 'Current Year')
+                        return d.getFullYear() === now.getFullYear()
+                    return true
+                })
             }
 
-            this.leaves = filtered;
+            this.leaves = filtered
         },
 
-        getUserFullName(user) {
-            return user ? `${user.firstname} ${user.lastname}` : 'Unknown';
-        },
-
-        getInitials(user) {
-            if (!user) return '?';
-            const f = user.firstname ? user.firstname.charAt(0) : '';
-            const l = user.lastname ? user.lastname.charAt(0) : '';
-            return (f + l).toUpperCase() || '?';
-        },
-
-        formatLeaveType(name) {
-            return name ? name.replace(/_/g, ' ') : 'N/A';
-        },
-
-        formatDateSimple(date) {
-            return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        },
-
-        formatTime(date) {
-            return new Date(date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-        },
-
-        getStatusColor(status) {
-            const colors = {
-                'Approved': 'success',
-                'Pending': 'warning',
-                'Cancelled': 'error',
-                'Hr Approved': 'info',
-                'Manager Approved': 'primary'
-            };
-            return colors[status] || 'grey';
-        },
-
-        getStatusIcon(status) {
-            const icons = {
-                'Approved': 'mdi-check-decagram',
-                'Pending': 'mdi-clock-outline',
-                'Cancelled': 'mdi-close-octagon',
-                'Hr Approved': 'mdi-account-check',
-                'Manager Approved': 'mdi-shield-check'
-            };
-            return icons[status] || 'mdi-help-circle';
-        },
-
-        viewLeave(item) {
-            this.selectedItem = item;
-            this.viewLeaveModal = true;
-        },
-
-        closeLeaveViewModal() {
-            this.viewLeaveModal = false;
-        },
-
-        async openLogsModal(item) {
-            try {
-                const response = await axios.get(`${this.base_url}api/v1/leaves/${item.id}/logs`);
-                this.logs = response.data.logs || [];
-                this.logsModal = true;
-            } catch (error) {
-                this.showNotify('Failed to fetch audit logs', 'error', 'mdi-history-off');
-            }
-        },
-
-        closeLogsModal() {
-            this.logsModal = false;
-        },
-
-        approveLeave(item) {
-            this.selectedItem = item;
-            this.approveNotes = '';
-            this.approveLeaveModal = true;
-        },
-
-        closeApproveLeaveModal() {
-            this.approveLeaveModal = false;
-        },
+        viewLeave(item) { this.selectedItem = item; this.viewLeaveModal = true },
+        approveLeave(item) { this.selectedItem = item; this.approveNotes = ''; this.approveLeaveModal = true },
+        cancelLeave(item) { this.selectedItem = item; this.cancelNotes = ''; this.cancelLeaveModal = true },
 
         async approveLeaveAction() {
-            this.isSubmittingAction = true;
+            this.actioning = true
             try {
-                await axios.put(`${this.base_url}api/v1/leaves/${this.selectedItem.id}/approve`, { 
-                    userId: this.userId,
-                    notes: this.approveNotes 
-                });
-                this.showNotify('Leave request approved successfully', 'success', 'mdi-check-circle');
-                this.fetchLeaves();
-                this.closeApproveLeaveModal();
-            } catch (error) {
-                this.showNotify('Approval failed. Please try again.', 'error', 'mdi-alert');
-            } finally {
-                this.isSubmittingAction = false;
-            }
-        },
-
-        cancelLeave(item) {
-            this.selectedItem = item;
-            this.cancelNotes = '';
-            this.cancelLeaveModal = true;
-        },
-
-        closeCancelLeaveModal() {
-            this.cancelLeaveModal = false;
+                await axios.put(`api/v1/leaves/${this.selectedItem.id}/approve`, { userId: this.userId })
+                this.showSnack('Leave approved successfully', 'success')
+                this.approveLeaveModal = false
+                this.fetchLeaves()
+            } catch { this.showSnack('Error approving leave', 'error') }
+            this.actioning = false
         },
 
         async cancelLeaveAction() {
-            this.isSubmittingAction = true;
+            this.actioning = true
             try {
-                await axios.put(`${this.base_url}api/v1/leaves/${this.selectedItem.id}/cancel`, { 
-                    userId: this.userId,
-                    comment: this.cancelNotes 
-                });
-                this.showNotify('Leave request rejected', 'warning', 'mdi-close-circle');
-                this.fetchLeaves();
-                this.closeCancelLeaveModal();
-            } catch (error) {
-                this.showNotify('Cancellation failed', 'error', 'mdi-alert');
-            } finally {
-                this.isSubmittingAction = false;
-            }
+                await axios.put(`api/v1/leaves/${this.selectedItem.id}/cancel`, { userId: this.userId })
+                this.showSnack('Leave rejected', 'success')
+                this.cancelLeaveModal = false
+                this.fetchLeaves()
+            } catch { this.showSnack('Error rejecting leave', 'error') }
+            this.actioning = false
         },
 
-        showNotify(text, color, icon) {
-            this.snackbar = { show: true, text, color, icon };
-        }
-    }
-};
+        async openLogsModal(item) {
+            this.logs = []
+            this.logsModal = true
+            try {
+                const { data } = await axios.get(`api/v1/leaves/${item.id}/logs`)
+                this.logs = data.logs
+            } catch {}
+        },
+
+        // ── Helpers ──────────────────────────────────────────────────────
+        fullName: (u) => u ? `${u.firstname} ${u.lastname}` : '',
+        initials: (u) => u ? `${u.firstname?.[0] ?? ''}${u.lastname?.[0] ?? ''}`.toUpperCase() : '?',
+
+        avatarColor(user) {
+            const colors = ['#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981','#3b82f6','#ef4444','#14b8a6']
+            const str = user ? `${user.firstname}${user.lastname}` : ''
+            let hash = 0
+            for (let c of str) hash = c.charCodeAt(0) + ((hash << 5) - hash)
+            return colors[Math.abs(hash) % colors.length]
+        },
+
+        statusColor(s) {
+            return { Pending: 'warning', Approved: 'success', 'Hr Approved': 'info', Cancelled: 'error' }[s] || 'grey'
+        },
+
+        statusIcon(s) {
+            return { Pending: 'mdi-clock-outline', Approved: 'mdi-check-circle', 'Hr Approved': 'mdi-check-all', Cancelled: 'mdi-close-circle' }[s] || 'mdi-help'
+        },
+
+        formatDate(d) {
+            if (!d) return 'N/A'
+            return new Date(d).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+        },
+
+        formatTime(d) {
+            if (!d) return ''
+            return new Date(d).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+        },
+
+        showSnack(text, color = 'success') { this.snackbar = { show: true, text, color } },
+    },
+}
 </script>
 
 <style scoped>
-.glass-card {
-    background: rgba(255, 255, 255, 0.1) !important;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+.tl-page-header {
+    display: flex; align-items: flex-start;
+    justify-content: space-between; flex-wrap: wrap; gap: 12px;
+}
+.tl-page-title { font-size: 1.5rem; font-weight: 800; display: flex; align-items: center; }
+.tl-page-sub { color: #9e9e9e; font-size: 0.875rem; margin-top: 2px; }
+
+/* ── Stat cards ──────────────────────────────────────────────────────────── */
+.tl-stat-card {
+    display: flex; align-items: center; gap: 14px; padding: 16px;
+    border: 1px solid rgba(0,0,0,0.07);
+}
+.tl-stat-icon {
+    width: 46px; height: 46px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.tl-stat-val { font-size: 1.7rem; font-weight: 800; line-height: 1; color: #1a1a2e; }
+.tl-stat-lbl { font-size: 0.78rem; color: #757575; margin-top: 3px; }
+
+/* ── Filter card ─────────────────────────────────────────────────────────── */
+.tl-filter-card { border: 1px solid rgba(0,0,0,0.07); }
+.tl-filter-title { font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; color: #424242; }
+
+/* ── Table card ──────────────────────────────────────────────────────────── */
+.tl-table-card { border: 1px solid rgba(0,0,0,0.07); overflow: hidden; }
+
+.tl-avatar { font-size: 0.75rem; }
+
+/* ── Leave detail dialog header ──────────────────────────────────────────── */
+.tl-dialog-header {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    padding: 20px; display: flex; align-items: center;
 }
 
-.modern-table :deep(.v-data-table-header) {
-    background-color: #f8fafc;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
+/* ── Detail item ─────────────────────────────────────────────────────────── */
+.tl-detail-item { margin-bottom: 14px; }
+.tl-detail-label { font-size: 0.72rem; color: #9e9e9e; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; }
+.tl-detail-val { font-size: 0.9rem; font-weight: 600; color: #212121; margin-top: 2px; }
+
+/* ── Comment box ─────────────────────────────────────────────────────────── */
+.tl-comment-box {
+    background: rgba(0,0,0,0.03); border-radius: 10px; padding: 12px;
+    border-left: 3px solid #6366f1;
 }
 
-.modern-table :deep(tr:hover) {
-    background-color: #f1f5f9 !important;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+.tl-empty { display: flex; flex-direction: column; align-items: center; }
 
-.modern-input :deep(.v-field__outline) {
-    border-color: #e2e8f0 !important;
-}
-
-.modern-input :deep(.v-field--focused .v-field__outline) {
-    border-color: #3b82f6 !important;
-    border-width: 2px !important;
-}
-
-.shadow-sm {
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
-}
-
-.min-vh-100 {
-    min-height: 100vh;
-}
-
-.log-item:hover {
-    background-color: #f8fafc;
-    border-radius: 8px;
-}
+.gap-1 { gap: 4px; }
+.gap-2 { gap: 8px; }
+.font-weight-semibold { font-weight: 600; }
 </style>
