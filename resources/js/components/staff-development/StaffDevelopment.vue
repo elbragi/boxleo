@@ -51,6 +51,48 @@
           </v-col>
         </v-row>
 
+        <!-- External Learning Platforms (Moved Higher for Visibility) -->
+        <div class="sd-section-header mb-3 mt-4">
+          <span class="sd-section-title">External Learning Platforms</span>
+          <p class="text-caption text-grey">Explore free and professional courses from our trusted partners</p>
+        </div>
+        <v-row class="mb-6">
+          <v-col cols="12" sm="6">
+            <v-card class="sd-ext-card alison-card" elevation="0" rounded="xl" href="https://alison.com" target="_blank"
+              style="background-image: linear-gradient(to right, rgba(46, 125, 50, 0.95), rgba(46, 125, 50, 0.4)), url('/assets/img/development/alison.png'); background-size: cover; background-position: center;">
+              <div class="sd-ext-icon">
+                <v-icon icon="mdi-school-outline" size="32" color="white"/>
+              </div>
+              <div class="sd-ext-content">
+                <div class="sd-ext-label">FREE LEARNING</div>
+                <div class="sd-ext-name">Alison</div>
+                <div class="sd-ext-desc">Access 4,000+ free online courses with certificates and diplomas.</div>
+                <div class="sd-ext-footer">
+                  <span>Visit alison.com</span>
+                  <v-icon size="16">mdi-open-in-new</v-icon>
+                </div>
+              </div>
+            </v-card>
+          </v-col>
+          <v-col cols="12" sm="6">
+            <v-card class="sd-ext-card gl-card" elevation="0" rounded="xl" href="https://www.mygreatlearning.com" target="_blank"
+              style="background-image: linear-gradient(to right, rgba(26, 35, 126, 0.95), rgba(26, 35, 126, 0.4)), url('/assets/img/development/great_learning.png'); background-size: cover; background-position: center;">
+              <div class="sd-ext-icon">
+                <v-icon icon="mdi-brain" size="32" color="white"/>
+              </div>
+              <div class="sd-ext-content">
+                <div class="sd-ext-label">PROFESSIONAL GROWTH</div>
+                <div class="sd-ext-name">My Great Learning</div>
+                <div class="sd-ext-desc">Earn professional certificates from top world-class universities.</div>
+                <div class="sd-ext-footer">
+                  <span>Visit mygreatlearning.com</span>
+                  <v-icon size="16">mdi-open-in-new</v-icon>
+                </div>
+              </div>
+            </v-card>
+          </v-col>
+        </v-row>
+
         <!-- Featured courses -->
         <div class="sd-section-header mb-3">
           <span class="sd-section-title">Featured Courses</span>
@@ -107,6 +149,48 @@
             </v-col>
           </v-row>
         </template>
+
+        <!-- Top Recommended Courses from Partners -->
+        <div class="sd-section-header mb-3 mt-10">
+          <div class="d-flex align-center gap-3">
+            <span class="sd-section-title">Professional External Courses</span>
+            <v-chip-group v-model="selectedExternalCategory" selected-class="primary--text" mandatory class="category-chips-group">
+              <v-chip v-for="cat in externalCategories" :key="cat" :value="cat" size="small" variant="tonal" rounded="lg"
+                class="px-4 font-weight-bold">
+                {{ cat }}
+              </v-chip>
+            </v-chip-group>
+          </div>
+          <p class="text-caption text-grey">Start learning today with these highly-rated courses from our partners</p>
+        </div>
+
+        <v-row class="mb-6">
+          <v-col cols="12" sm="6" md="4" v-for="(course, i) in filteredExternalCourses" :key="course.platform + '-' + i">
+            <v-card class="sd-course-card shadow-sm" rounded="xl" :href="course.url" target="_blank">
+              <v-img :src="course.thumb" height="160" cover class="align-end">
+                <v-chip size="x-small" :color="course.platform === 'Alison' ? 'success' : 'indigo'" class="ma-2 font-weight-bold" label>
+                  {{ course.platform.toUpperCase() }}
+                </v-chip>
+              </v-img>
+              <div class="pa-4">
+                <div class="d-flex align-center justify-space-between mb-1">
+                  <div class="text-caption text-uppercase font-weight-bold" :class="course.platform === 'Alison' ? 'text-success' : 'text-indigo'">
+                    {{ course.category }}
+                  </div>
+                  <v-chip v-if="course.is_free" size="x-small" variant="flat" color="grey-lighten-4" class="text-grey-darken-2 font-weight-bold">FREE</v-chip>
+                </div>
+                <div class="sd-course-title mb-2">{{ course.title }}</div>
+                <div class="sd-course-footer">
+                  <div class="d-flex align-center">
+                    <v-icon size="14" color="amber" class="me-1">mdi-star</v-icon>
+                    <span class="text-caption font-weight-bold">4.8</span>
+                  </div>
+                  <v-icon size="18" color="grey-lighten-1">mdi-arrow-top-right</v-icon>
+                </div>
+              </div>
+            </v-card>
+          </v-col>
+        </v-row>
       </div>
 
       <!-- ══════════════════════════════════════════════════════════════════ -->
@@ -728,6 +812,19 @@ export default {
       snackbar: { show: false, text: '', color: 'success' },
 
       categories: ['Leadership & Management', 'Technical Skills', 'Compliance & Safety', 'Soft Skills', 'Customer Service', 'Finance & Business', 'Health & Wellness', 'General'],
+      
+      externalCategories: ['All', 'Logistics', 'HR & Management', 'IT & Digital', 'Customer Service'],
+      selectedExternalCategory: 'All',
+      externalCourses: [
+        { title: 'Supply Chain and Logistics Management', platform: 'Alison', category: 'Logistics', url: 'https://alison.com/course/supply-chain-and-logistics-management', thumb: '/assets/img/development/course_thumb.png', is_free: true },
+        { title: 'Customer Service Essentials', platform: 'Great Learning', category: 'Customer Service', url: 'https://www.mygreatlearning.com/academy/learn-for-free/courses/customer-service-essentials', thumb: '/assets/img/development/course_thumb.png', is_free: true },
+        { title: 'Human Resource Management', platform: 'Great Learning', category: 'HR & Management', url: 'https://www.mygreatlearning.com/academy/learn-for-free/courses/human-resource-management', thumb: '/assets/img/development/course_thumb.png', is_free: true },
+        { title: 'Introduction to Cybersecurity', platform: 'Alison', category: 'IT & Digital', url: 'https://alison.com/course/introduction-to-cybersecurity', thumb: '/assets/img/development/course_thumb.png', is_free: true },
+        { title: 'Diploma in Customer Service', platform: 'Alison', category: 'Customer Service', url: 'https://alison.com/course/diploma-in-customer-service', thumb: '/assets/img/development/course_thumb.png', is_free: true },
+        { title: 'Diploma in Human Resources', platform: 'Alison', category: 'HR & Management', url: 'https://alison.com/course/diploma-in-human-resources', thumb: '/assets/img/development/course_thumb.png', is_free: true },
+        { title: 'Logistics Management', platform: 'Great Learning', category: 'Logistics', url: 'https://www.mygreatlearning.com/academy/learn-for-free/courses/logistics-management', thumb: '/assets/img/development/course_thumb.png', is_free: true },
+        { title: 'Digital Transformation & AI', platform: 'Alison', category: 'IT & Digital', url: 'https://alison.com/course/artificial-intelligence-for-supply-chains-and-logistics', thumb: '/assets/img/development/course_thumb.png', is_free: true },
+      ],
     }
   },
 
@@ -757,6 +854,10 @@ export default {
     },
     featuredCourses() {
       return this.allCourses.filter(c => c.is_featured).slice(0, 6)
+    },
+    filteredExternalCourses() {
+      if (this.selectedExternalCategory === 'All') return this.externalCourses;
+      return this.externalCourses.filter(c => c.category === this.selectedExternalCategory);
     },
     myCoursesInProgress() {
       return this.myCoursesList.filter(c => c.status === 'active')
@@ -1318,6 +1419,78 @@ export default {
 
 /* ═══ Category chips ══════════════════════════════════════════════════════ */
 .sd-category-chips { overflow-x: auto; white-space: nowrap; }
+
+/* ═══ External Resources Cards ═══════════════════════════════════════════ */
+.sd-ext-card {
+  position: relative;
+  overflow: hidden;
+  padding: 24px;
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  border: 1px solid rgba(0,0,0,0.05);
+}
+.sd-ext-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.12) !important;
+}
+.sd-ext-icon {
+  width: 48px; height: 48px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 2;
+}
+.alison-card { background: linear-gradient(135deg, #2e7d32, #66bb6a); color: white; }
+.gl-card { background: linear-gradient(135deg, #1a237e, #3f51b5); color: white; }
+
+.sd-ext-content { z-index: 2; color: white; text-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+.sd-ext-label { font-size: 0.65rem; font-weight: 800; letter-spacing: 1px; opacity: 0.9; color: rgba(255,255,255,0.9); }
+.sd-ext-name { font-size: 1.4rem; font-weight: 800; margin: 2px 0 6px; color: white; }
+.sd-ext-desc { font-size: 0.85rem; opacity: 0.95; line-height: 1.4; max-width: 85%; color: white; }
+.sd-ext-footer {
+  margin-top: 12px; font-size: 0.75rem; font-weight: 700;
+  display: flex; align-items: center; gap: 6px;
+  color: white; opacity: 0.9;
+}
+.sd-ext-bg-icon {
+  position: absolute; bottom: -20px; right: -20px;
+  opacity: 0.1; transform: rotate(-15deg);
+  z-index: 1; transition: all 0.4s;
+}
+.sd-ext-card:hover .sd-ext-bg-icon {
+  transform: rotate(0deg) scale(1.1);
+  opacity: 0.15;
+}
+
+/* ═══ Course Cards ═══════════════════════════════════════════════════════ */
+.sd-course-card {
+  transition: all 0.3s;
+  cursor: pointer;
+  border: 1px solid rgba(0,0,0,0.05) !important;
+  overflow: hidden;
+}
+.sd-course-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+}
+.sd-course-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1.3;
+  height: 2.6rem;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.sd-course-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
 /* ═══ Misc ════════════════════════════════════════════════════════════════ */
 .gap-2 { gap: 8px; }

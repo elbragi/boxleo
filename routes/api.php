@@ -44,6 +44,12 @@ use App\Http\Controllers\Api\StaffDevelopmentApiController;
 
 Route::post('v1/syncZkteco', [AttendanceApiController::class, 'syncZkteco']);
 
+// Public Recruitment API (Secured)
+Route::middleware(['check.recruitment.api'])->group(function () {
+    Route::get('v1/external/jobs', [\App\Http\Controllers\Api\ExternalJobController::class, 'index']);
+    Route::post('v1/external/applications', [\App\Http\Controllers\Api\ExternalJobController::class, 'store'])->middleware('throttle:10,60'); // 10 per hour
+});
+
 Route::middleware('auth:sanctum')->group(function () {
   //users
   Route::get('v1/users', [UserApiController::class, 'index']);

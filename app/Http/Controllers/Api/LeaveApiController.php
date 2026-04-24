@@ -216,17 +216,59 @@ class LeaveApiController extends Controller
       return response()->json(['error' => 'User not found'], 404);
     }
 
-    // $departmentId = $user->department_id;
-    $departmentId = $user->managerDepartments->pluck('id');
+    $departmentIds = $user->managerDepartments->pluck('id');
     $unitId = $user->unit_id;
 
-    $leaves = Leave::with(['user', 'leave_type'])
-      ->whereHas('user', function ($query) use ($departmentId, $unitId) {
-        $query->whereIn('department_id', $departmentId)
+    $query = Leave::with(['user', 'leave_type'])
+      ->whereHas('user', function ($query) use ($departmentIds, $unitId) {
+        $query->whereIn('department_id', $departmentIds)
           ->where('unit_id', $unitId);
-      })
-      ->orderByRaw("CASE WHEN status = 'pending' THEN 1 ELSE 2 END") // Prioritize 'pending' status
+      });
 
+    // Robust Search (Name or Leave Type)
+    if ($request->filled('search')) {
+      $search = $request->input('search');
+      $query->where(function ($q) use ($search) {
+        $q->whereHas('user', function ($uq) use ($search) {
+          $uq->where('firstname', 'like', "%{$search}%")
+            ->orWhere('lastname', 'like', "%{$search}%");
+        })->orWhereHas('leave_type', function ($lq) use ($search) {
+          $lq->where('name', 'like', "%{$search}%");
+        });
+      });
+    }
+
+    // Status Filter
+    if ($request->filled('status') && $request->status !== 'All') {
+      $query->where('status', $request->status);
+    }
+
+    // Application Period Filter
+    if ($request->filled('application_date') && $request->application_date !== 'All') {
+      $period = $request->application_date;
+      $now = now();
+
+      if ($period === 'Today') {
+        $query->whereDate('created_at', $now->toDateString());
+      } elseif ($period === 'Current Week') {
+        $query->whereBetween('created_at', [
+          $now->copy()->startOfWeek()->toDateTimeString(),
+          $now->copy()->endOfWeek()->toDateTimeString()
+        ]);
+      } elseif ($period === 'Last Week') {
+        $query->whereBetween('created_at', [
+          $now->copy()->subWeek()->startOfWeek()->toDateTimeString(),
+          $now->copy()->subWeek()->endOfWeek()->toDateTimeString()
+        ]);
+      } elseif ($period === 'Current Month') {
+        $query->whereMonth('created_at', $now->month)
+          ->whereYear('created_at', $now->year);
+      } elseif ($period === 'Current Year') {
+        $query->whereYear('created_at', $now->year);
+      }
+    }
+
+    $leaves = $query->orderByRaw("CASE WHEN status = 'pending' THEN 1 ELSE 2 END")
       ->orderBy('created_at', 'desc')
       ->get();
 

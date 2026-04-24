@@ -42,7 +42,8 @@
                     <v-col cols="12" md="4">
                         <v-text-field v-model="search" prepend-inner-icon="mdi-magnify"
                             label="Search Employee or Leave Type" density="compact"
-                            variant="outlined" rounded hide-details clearable/>
+                            variant="outlined" rounded hide-details clearable
+                            @update:model-value="onSearchChange"/>
                     </v-col>
                     <v-col cols="12" sm="6" md="3">
                         <v-select v-model="form.application_date" :items="applicationDateOptions"
@@ -65,8 +66,7 @@
         <v-card elevation="0" rounded="xl" class="tl-table-card">
             <v-data-table
                 :headers="tableHeaders"
-                :items="filteredLeaves"
-                :search="search"
+                :items="leaves"
                 :loading="loading"
                 items-per-page-text="Items per page:"
                 rounded="xl"
@@ -326,7 +326,8 @@ export default {
             leaves: [],
             allLeaves: [],
             search: '',
-            form: { application_date: 'Last Week', status: 'Pending' },
+            searchTimeout: null,
+            form: { application_date: 'All', status: 'All' },
             applicationDateOptions: ['All', 'Today', 'Current Week', 'Last Week', 'Current Month', 'Current Year'],
             statusOptions: ['All', 'Pending', 'Approved', 'Cancelled', 'Hr Approved'],
             viewLeaveModal: false,
@@ -389,47 +390,30 @@ export default {
         async fetchLeaves() {
             this.loading = true
             try {
-                const { data } = await axios.post('api/v1/team-leaves', { userId: this.userId })
+                const params = {
+                    userId: this.userId,
+                    search: this.search,
+                    status: this.form.status,
+                    application_date: this.form.application_date
+                }
+                const { data } = await axios.post('api/v1/team-leaves', params)
                 this.allLeaves = data.leaves
                 this.leaves = data.leaves
-                this.filterLeaves()
             } catch {
                 this.showSnack('Failed to load leave requests', 'error')
             }
             this.loading = false
         },
 
+        onSearchChange() {
+            clearTimeout(this.searchTimeout)
+            this.searchTimeout = setTimeout(() => {
+                this.fetchLeaves()
+            }, 500)
+        },
+
         filterLeaves() {
-            let filtered = [...this.allLeaves]
-
-            if (this.form.status && this.form.status !== 'All') {
-                filtered = filtered.filter(l => l.status === this.form.status)
-            }
-
-            if (this.form.application_date && this.form.application_date !== 'All') {
-                const now = new Date()
-                filtered = filtered.filter(l => {
-                    const d = new Date(l.created_at)
-                    if (this.form.application_date === 'Today') return d.toDateString() === now.toDateString()
-                    if (this.form.application_date === 'Current Week') {
-                        const start = new Date(now); start.setDate(now.getDate() - now.getDay())
-                        const end = new Date(start); end.setDate(start.getDate() + 6)
-                        return d >= start && d <= end
-                    }
-                    if (this.form.application_date === 'Last Week') {
-                        const start = new Date(now); start.setDate(now.getDate() - now.getDay() - 7)
-                        const end = new Date(start); end.setDate(start.getDate() + 6)
-                        return d >= start && d <= end
-                    }
-                    if (this.form.application_date === 'Current Month')
-                        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
-                    if (this.form.application_date === 'Current Year')
-                        return d.getFullYear() === now.getFullYear()
-                    return true
-                })
-            }
-
-            this.leaves = filtered
+            this.fetchLeaves()
         },
 
         viewLeave(item) { this.selectedItem = item; this.viewLeaveModal = true },

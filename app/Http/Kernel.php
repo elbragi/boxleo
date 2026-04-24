@@ -75,6 +75,7 @@ class Kernel extends HttpKernel
     protected $routeMiddleware = [
         'role' => \App\Http\Middleware\RoleMiddleware::class,
         'no-register' => \App\Http\Middleware\NoRegister::class,
+        'check.recruitment.api' => \App\Http\Middleware\CheckRecruitmentApiKey::class,
     ];
 
 

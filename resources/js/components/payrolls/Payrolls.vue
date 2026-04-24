@@ -1248,8 +1248,7 @@ export default {
         { name: 'Benedict Murila', isCBD: false },
         { name: 'Duncan Yavan', isCBD: false },
         { name: 'Nicholas Amenya', isCBD: false },
-        { name: 'Vitalis Wafula', isCBD: true },
-        { name: 'SYLVESTER ONYISI', isCBD: false }
+        { name: 'Vitalis Wafula', isCBD: true }
       ],
       riderSearch: '',
       
@@ -1282,13 +1281,13 @@ export default {
         rider: null,
         deliveries: 0,
         rate: 136.50,
-        start_date: '2026-04-10',
-        end_date: '2026-04-16',
+        start_date: '2026-03-20',
+        end_date: '2026-03-26',
         payment_mode: 'Mobile Money',
         earnings: [],
         deductions: [],
-        month: 4,
-        year: 2026,
+        month: new Date().getMonth() + 1,
+        year: new Date().getFullYear(),
       },
       
       emailForm: {
@@ -1624,12 +1623,12 @@ export default {
         rider: null,
         deliveries: 0,
         rate: 136.50,
-        start_date: '2026-04-10',
-        end_date: '2026-04-16',
+        start_date: '2026-03-20',
+        end_date: '2026-03-26',
         payment_mode: 'Mobile Money',
         earnings: [],
         deductions: [],
-        month: 4,
+        month: 3,
         year: 2026,
       };
     },
