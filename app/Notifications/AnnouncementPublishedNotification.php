@@ -53,7 +53,7 @@ class AnnouncementPublishedNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         $authorName = \App\Models\User::find($this->announcement->author)?->firstname ?? 'Admin';
-        $publishDate = \Carbon\Carbon::parse($this->announcement->publish_date)->format('F j, Y');
+        $publishDate = \Carbon\Carbon::parse($this->announcement->publish_date)->format('F j, Y \a\t g:i A');
 
         return (new MailMessage)
             ->from('support@boxleocourier.com', 'Boxleo Support')

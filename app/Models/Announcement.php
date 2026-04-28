@@ -15,8 +15,8 @@ class Announcement extends Model
     ];
     protected $casts = [
         'is_active' => 'boolean',
-        // 'publish_date' => 'datetime',
-        // 'expiration_date' => 'datetime',
+        'publish_date' => 'datetime',
+        'expiration_date' => 'datetime',
     ];
 
     //

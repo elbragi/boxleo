@@ -223,7 +223,7 @@ class AnnouncementApiController extends Controller
 
         $announcement->status = $status;
 
-        if (!$announcement->publish_date) {
+        if ($status === 'published') {
             $announcement->publish_date = now();
         }
 
