@@ -20,18 +20,12 @@ class AttendanceApiController extends Controller
 {
     public function index(Request $request)
     {
-        $user = auth()->user();
-        $isAdmin = $user->hasRole('admin') || $user->super_admin || $user->is_hr || $user->is_coo;
-
-        // Admins see all units unless they explicitly filter; non-admins always see their own unit
-        $unit_id = $request->unit_id ?? ($isAdmin ? null : $user->unit_id);
+        $unit_id = $request->unit_id ?? auth()->user()->unit_id;
 
         $query = Attendance::with('user.unit')
             ->whereHas('user', function ($query) use ($unit_id) {
-                if ($unit_id) {
-                    $query->where('unit_id', $unit_id);
-                }
-                $query->whereNull('deleted_at');
+                $query->where('unit_id', $unit_id)
+                    ->whereNull('deleted_at');
             })
             ->orderBy('attendance_date', 'desc')
             ->orderBy('created_at', 'desc');

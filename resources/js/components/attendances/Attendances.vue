@@ -397,7 +397,7 @@ export default {
       updateStatusesModal: false,
       addNotesModal: false,
       filters: {
-        country_id: null,
+        country_id: 1,
         attendance_date: new Date().toISOString().split('T')[0],
         user_id: null,
         attendance_type: null,
@@ -497,6 +497,9 @@ export default {
       const params = {};
       if (this.filters.attendance_date) {
         params.attendance_date = this.filters.attendance_date;
+      }
+      if (this.filters.country_id) {
+        params.unit_id = this.filters.country_id;
       }
 
       try {
