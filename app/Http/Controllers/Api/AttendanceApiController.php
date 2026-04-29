@@ -152,7 +152,7 @@ class AttendanceApiController extends Controller
 
     public function userAttendance(Request $request)
     {
-        $attendances = Attendance::where('user_id', $request->user_id)
+        $attendances = Attendance::where('user_id', $request->route('user_id'))
             ->orderBy('attendance_date', 'desc')
             ->get();
 
