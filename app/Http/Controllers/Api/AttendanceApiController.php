@@ -1028,7 +1028,7 @@ class AttendanceApiController extends Controller
                 'in_out_pairs' => null, // Optional: fill if available
                 'is_present' => true,
                 'hours_worked' => Carbon::parse($clockOut)->diffInHours(Carbon::parse($clockIn)),
-                'status' => $this->isLateFromZkteco($clockIn, $unit) ? 'Late' : 'In Time',
+                'status' => $this->isLateFromZkteco($clockIn, $unit, $date) ? 'Late' : 'In Time',
                 'notes' => $notes ?? 'Processed ZKTeco sync',
                 'ip_address' => request()->ip(),
             ]
@@ -1043,25 +1043,19 @@ class AttendanceApiController extends Controller
 
 
 
-    private function isLateFromZkteco($clockInTime, $unit)
+    private function isLateFromZkteco($clockInTime, $unit, $date = null)
     {
-        Log::info('isLateFromZkteco called', [
-            'clockInTime' => $clockInTime,
-            'unit_id' => $unit ? $unit->id : null,
-            'unit_timezone' => $unit ? $unit->timezone : null,
-            'unit_late_threshold' => $unit->late_threshold ?? null,
-            'unit_weekend_threshold' => $unit->weekend_threshold ?? null,
-            'unit_sunday_threshold' => $unit->sunday_threshold ?? null,
-            'unit_weekend_day' => $unit->weekend_day ?? null,
-        ]);
-
         if (!$unit) {
             Log::warning('Missing unit for lateness check');
             return false;
         }
 
         try {
-            $userTime = Carbon::parse($clockInTime)->setTimezone($unit->timezone);
+            // Use the actual attendance date so weekend/holiday checks are correct.
+            // Without this, syncing on a different day (e.g. May 1 holiday) would
+            // wrongly apply the holiday threshold to past records.
+            $dateStr = $date ?? now()->setTimezone($unit->timezone)->toDateString();
+            $userTime = Carbon::createFromFormat('Y-m-d H:i:s', $dateStr . ' ' . $clockInTime, $unit->timezone);
         } catch (\Exception $e) {
             Log::error('Failed to parse clockInTime in isLateFromZkteco', [
                 'clockInTime' => $clockInTime,
@@ -1109,19 +1103,13 @@ class AttendanceApiController extends Controller
             $lateThreshold = $defaultLateThreshold;
         }
 
-        $thresholdTime = Carbon::parse(
-            $userTime->toDateString() . ' ' . $lateThreshold,
+        $thresholdTime = Carbon::createFromFormat(
+            'Y-m-d H:i:s',
+            $userTime->toDateString() . ' ' . $lateThreshold . ':00',
             $unit->timezone
-        )->setTimezone('UTC');
+        );
 
-        Log::info('Evaluating lateness for ZKTeco', [
-            'user_time' => $userTime->toDateTimeString(),
-            'threshold' => $thresholdTime->toDateTimeString(),
-            'lateThreshold' => $lateThreshold,
-            'comparison' => Carbon::parse($clockInTime)->toDateTimeString() . ' > ' . $thresholdTime->toDateTimeString(),
-        ]);
-
-        $isLate = Carbon::parse($clockInTime)->greaterThan($thresholdTime);
+        $isLate = $userTime->greaterThan($thresholdTime);
 
         Log::info('isLateFromZkteco result', [
             'isLate' => $isLate,
