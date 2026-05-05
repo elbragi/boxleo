@@ -1103,9 +1103,8 @@ class AttendanceApiController extends Controller
             $lateThreshold = $defaultLateThreshold;
         }
 
-        $thresholdTime = Carbon::createFromFormat(
-            'Y-m-d H:i:s',
-            $userTime->toDateString() . ' ' . $lateThreshold . ':00',
+        $thresholdTime = Carbon::parse(
+            $userTime->toDateString() . ' ' . $lateThreshold,
             $unit->timezone
         );
 
