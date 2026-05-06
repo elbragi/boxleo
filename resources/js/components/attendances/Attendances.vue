@@ -397,7 +397,7 @@ export default {
       updateStatusesModal: false,
       addNotesModal: false,
       filters: {
-        country_id: 1,
+        country_id: null,
         attendance_date: new Date().toISOString().split('T')[0],
         user_id: null,
         attendance_type: null,
