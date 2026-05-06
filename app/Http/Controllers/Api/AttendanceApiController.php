@@ -918,30 +918,38 @@ class AttendanceApiController extends Controller
             return response()->json(['message' => 'No records to sync'], 400);
         }
 
-        $users = User::whereIn('zk_user_id', $records->pluck('user_id'))->get()->keyBy('zk_user_id');
-        Log::info('Users fetched for zk_user_ids', ['user_ids' => $records->pluck('user_id')->unique()->values()->all()]);
+        $zkUserIds = $records->pluck('user_id')->unique()->values()->all();
+        $users = User::whereIn('zk_user_id', $zkUserIds)->get()->keyBy('zk_user_id');
+
+        Log::info('Users fetched for zk_user_ids', [
+            'requested_zk_ids' => $zkUserIds,
+            'matched_count'    => $users->count(),
+        ]);
+
+        $syncedCount = 0;
+        $skippedIds  = [];
 
         foreach ($records->toArray() as $record) {
             $zkUserId = $record['user_id'];
-            $user = $users->get($zkUserId);
+            $user     = $users->get($zkUserId);
 
             if (!$user) {
                 Log::warning("User not found for zk_user_id: $zkUserId");
+                $skippedIds[] = $zkUserId;
                 continue;
             }
 
-            $date = $record['date'];
-            $clockIn = $record['clock_in'];
+            $date     = $record['date'];
+            $clockIn  = $record['clock_in'];
             $clockOut = $record['clock_out'];
 
             Log::info('Attendance data prepared', [
-                'user_id' => $user->id,
-                'date' => $date,
+                'user_id'  => $user->id,
+                'date'     => $date,
                 'clock_in' => $clockIn,
-                'clock_out' => $clockOut,
+                'clock_out'=> $clockOut,
             ]);
 
-            // Use the helper method
             $this->processAttendanceFromZkteco(
                 $user,
                 $date,
@@ -951,15 +959,38 @@ class AttendanceApiController extends Controller
                 'Auto-synced from ZKTeco'
             );
 
+            $syncedCount++;
+
             Log::info("Synced attendance for user", [
-                'user_id' => $user->id,
+                'user_id'   => $user->id,
                 'user_name' => $user->name ?? ($user->firstname ?? '') . ' ' . ($user->lastname ?? ''),
-                'date' => $date
+                'date'      => $date,
             ]);
         }
 
-        Log::info('ZKTeco sync completed');
-        return response()->json(['message' => 'ZKTeco records synced']);
+        $skippedUnique = array_unique($skippedIds);
+        Log::info('ZKTeco sync completed', [
+            'synced'  => $syncedCount,
+            'skipped' => count($skippedIds),
+            'unmatched_zk_ids' => $skippedUnique,
+        ]);
+
+        // If NOTHING was synced and some records were skipped, signal the error clearly
+        if ($syncedCount === 0 && count($skippedIds) > 0) {
+            return response()->json([
+                'message'           => 'No records synced — zk_user_id mapping missing for all employees',
+                'synced'            => 0,
+                'skipped'           => count($skippedIds),
+                'unmatched_zk_ids'  => $skippedUnique,
+            ], 422);
+        }
+
+        return response()->json([
+            'message' => 'ZKTeco records synced',
+            'synced'  => $syncedCount,
+            'skipped' => count($skippedIds),
+            'unmatched_zk_ids' => $skippedUnique,
+        ]);
     }
 
 
