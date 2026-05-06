@@ -20,12 +20,14 @@ class AttendanceApiController extends Controller
 {
     public function index(Request $request)
     {
-        $unit_id = $request->unit_id ?? auth()->user()->unit_id;
+        $unit_id = $request->unit_id ?? null;
 
         $query = Attendance::with('user.unit')
             ->whereHas('user', function ($query) use ($unit_id) {
-                $query->where('unit_id', $unit_id)
-                    ->whereNull('deleted_at');
+                if ($unit_id) {
+                    $query->where('unit_id', $unit_id);
+                }
+                $query->whereNull('deleted_at');
             })
             ->orderBy('attendance_date', 'desc')
             ->orderBy('created_at', 'desc');
