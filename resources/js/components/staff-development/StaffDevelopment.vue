@@ -280,6 +280,20 @@
       <!-- TAB: MY LEARNING                                                   -->
       <!-- ══════════════════════════════════════════════════════════════════ -->
       <div v-if="activeTab === 'my-learning'">
+
+        <!-- Top bar: filter tabs + enroll button -->
+        <div class="d-flex align-center justify-space-between mb-4 flex-wrap gap-3">
+          <v-tabs v-model="myLearningFilter" density="compact" v-if="!loadingMyCourses">
+            <v-tab value="all">All ({{ myCoursesList.length }})</v-tab>
+            <v-tab value="active">In Progress ({{ myCoursesInProgress.length }})</v-tab>
+            <v-tab value="completed">Completed ({{ myCoursesCompleted.length }})</v-tab>
+          </v-tabs>
+          <v-spacer/>
+          <v-btn color="primary" rounded prepend-icon="mdi-plus" @click="enrollDialog = true">
+            Enroll in a Course
+          </v-btn>
+        </div>
+
         <v-row v-if="loadingMyCourses">
           <v-col cols="12" md="6" v-for="n in 4" :key="n">
             <v-skeleton-loader type="card" rounded="xl"/>
@@ -287,16 +301,10 @@
         </v-row>
 
         <template v-else-if="myCoursesList.length > 0">
-          <!-- Filter tabs -->
-          <v-tabs v-model="myLearningFilter" class="mb-4" density="compact">
-            <v-tab value="all">All ({{ myCoursesList.length }})</v-tab>
-            <v-tab value="active">In Progress ({{ myCoursesInProgress.length }})</v-tab>
-            <v-tab value="completed">Completed ({{ myCoursesCompleted.length }})</v-tab>
-          </v-tabs>
-
           <v-row>
             <v-col cols="12" md="6" v-for="item in myCoursesFiltered" :key="item.enrollment_id">
               <v-card class="sd-my-course-card" elevation="0" rounded="xl">
+                <!-- Thumbnail -->
                 <div class="sd-my-course-thumb" :style="courseThumbStyle(item.course)">
                   <div class="sd-my-course-overlay">
                     <v-progress-circular :model-value="item.progress" :size="64" :width="6"
@@ -309,6 +317,7 @@
                     <v-icon start size="12">mdi-check-circle</v-icon>Done
                   </v-chip>
                 </div>
+
                 <div class="pa-4">
                   <div class="sd-my-course-title">{{ item.course.title }}</div>
                   <div class="d-flex align-center mt-1 mb-3 gap-2 text-caption text-grey">
@@ -317,7 +326,9 @@
                   </div>
                   <v-progress-linear :model-value="item.progress" rounded height="8"
                     :color="item.progress === 100 ? 'success' : 'primary'" bg-color="grey-lighten-3" class="mb-3"/>
-                  <div class="d-flex gap-2">
+
+                  <!-- Action buttons -->
+                  <div class="d-flex gap-2 mb-3">
                     <v-btn color="primary" variant="flat" rounded size="small" @click="openCourse(item.course)" class="flex-grow-1">
                       {{ item.progress === 100 ? 'Review' : 'Continue Learning' }}
                     </v-btn>
@@ -330,6 +341,51 @@
                       <v-icon>mdi-certificate</v-icon>
                     </v-btn>
                   </div>
+
+                  <!-- Notes section -->
+                  <v-expansion-panels variant="accordion" class="mb-2">
+                    <v-expansion-panel rounded="lg">
+                      <v-expansion-panel-title class="text-caption font-weight-medium py-2" min-height="36">
+                        <v-icon size="16" class="me-2">mdi-note-text-outline</v-icon>
+                        My Notes {{ item.notes ? '·' : '' }}
+                        <span v-if="item.notes" class="text-grey ms-1">{{ item.notes.substring(0, 30) }}{{ item.notes.length > 30 ? '…' : '' }}</span>
+                      </v-expansion-panel-title>
+                      <v-expansion-panel-text>
+                        <v-textarea
+                          :model-value="item.notes"
+                          @update:model-value="val => item.notes = val"
+                          @blur="saveNotes(item)"
+                          placeholder="Add your study notes, key takeaways, or questions here…"
+                          rows="4" auto-grow hide-details variant="outlined" density="compact"
+                          class="mt-1" style="font-size:13px"
+                        />
+                        <div class="text-right mt-1">
+                          <span class="text-caption text-grey">Auto-saves on blur</span>
+                        </div>
+                      </v-expansion-panel-text>
+                    </v-expansion-panel>
+                  </v-expansion-panels>
+
+                  <!-- Weekly reminder toggle -->
+                  <div class="d-flex align-center justify-space-between px-1 mt-1">
+                    <div class="d-flex align-center gap-2">
+                      <v-icon size="16" :color="item.reminder_enabled ? 'primary' : 'grey'">mdi-bell-outline</v-icon>
+                      <span class="text-caption">Weekly reminder</span>
+                    </div>
+                    <div class="d-flex align-center gap-2">
+                      <v-select v-if="item.reminder_enabled"
+                        :model-value="item.reminder_day"
+                        @update:model-value="val => updateReminder(item, val)"
+                        :items="weekDays" density="compact" variant="outlined" hide-details
+                        style="width:130px; font-size:12px"
+                      />
+                      <v-switch
+                        :model-value="item.reminder_enabled"
+                        @update:model-value="val => toggleReminder(item, val)"
+                        color="primary" hide-details density="compact"
+                      />
+                    </div>
+                  </div>
                 </div>
               </v-card>
             </v-col>
@@ -339,9 +395,60 @@
         <v-card v-else rounded="xl" class="sd-empty-card" elevation="0">
           <v-icon size="64" color="grey-lighten-2">mdi-school-outline</v-icon>
           <p class="text-grey mt-3">You haven't enrolled in any courses yet.</p>
-          <v-btn color="primary" rounded class="mt-2" @click="activeTab='catalog'">Browse Courses</v-btn>
+          <div class="d-flex gap-3 mt-3 justify-center">
+            <v-btn color="primary" rounded @click="enrollDialog = true" prepend-icon="mdi-plus">Enroll Now</v-btn>
+            <v-btn variant="outlined" rounded @click="activeTab='catalog'">Browse Catalog</v-btn>
+          </div>
         </v-card>
       </div>
+
+      <!-- ── Enroll Dialog ─────────────────────────────────────────────────── -->
+      <v-dialog v-model="enrollDialog" max-width="700" scrollable>
+        <v-card rounded="xl">
+          <div style="background: linear-gradient(135deg,#3b4fd8,#6c5ce7); padding:20px 24px;">
+            <div class="d-flex align-center justify-space-between">
+              <span class="text-white font-weight-bold" style="font-size:18px">Enroll in a Course</span>
+              <v-btn icon="mdi-close" variant="text" color="white" size="small" @click="enrollDialog=false"/>
+            </div>
+            <v-text-field v-model="enrollSearch" placeholder="Search courses…" variant="solo" density="compact"
+              prepend-inner-icon="mdi-magnify" hide-details rounded class="mt-3" bg-color="rgba(255,255,255,0.15)"
+              style="color:white" clearable/>
+          </div>
+
+          <v-card-text class="pa-4" style="max-height:480px; overflow-y:auto;">
+            <div v-if="loadingCatalog" class="text-center pa-8">
+              <v-progress-circular indeterminate color="primary"/>
+            </div>
+            <v-row v-else>
+              <v-col cols="12" sm="6" v-for="course in enrollableCourses" :key="course.id">
+                <v-card variant="outlined" rounded="lg" class="pa-3 d-flex flex-column" style="height:100%">
+                  <div class="d-flex align-center gap-2 mb-2">
+                    <div :style="courseThumbStyle(course)" style="width:48px;height:48px;border-radius:8px;flex-shrink:0"/>
+                    <div>
+                      <div class="font-weight-medium" style="font-size:14px;line-height:1.3">{{ course.title }}</div>
+                      <v-chip size="x-small" color="primary" variant="tonal" class="mt-1">{{ course.category }}</v-chip>
+                    </div>
+                  </div>
+                  <div class="text-caption text-grey mb-3">
+                    {{ course.level }} · {{ course.duration_hours }}h · {{ course.lessons_count }} lessons
+                  </div>
+                  <v-spacer/>
+                  <v-btn v-if="!course.enrolled" color="primary" size="small" rounded variant="flat"
+                    @click="enrollInCourse(course)" :loading="enrollingId === course.id">
+                    Enroll
+                  </v-btn>
+                  <v-chip v-else size="small" color="success" variant="tonal" prepend-icon="mdi-check">
+                    Enrolled
+                  </v-chip>
+                </v-card>
+              </v-col>
+              <v-col cols="12" v-if="enrollableCourses.length === 0">
+                <div class="text-center text-grey pa-8">No courses match your search.</div>
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-card>
+      </v-dialog>
 
       <!-- ══════════════════════════════════════════════════════════════════ -->
       <!-- TAB: CERTIFICATES                                                  -->
@@ -379,6 +486,10 @@
               <div class="pa-3">
                 <div class="sd-cert-course-title">{{ cert.course.title }}</div>
                 <div class="text-caption text-grey mb-2">{{ cert.course.category }}</div>
+                <div v-if="cert.course_url" class="d-flex align-center text-caption mb-1">
+                  <v-icon size="14" class="me-1" color="primary">mdi-link</v-icon>
+                  <a :href="cert.course_url" target="_blank" class="text-primary text-decoration-none text-truncate" style="max-width:220px">{{ cert.course_url }}</a>
+                </div>
                 <div v-if="cert.issuer" class="d-flex align-center text-caption mb-1">
                   <v-icon size="14" class="me-1">mdi-office-building</v-icon>{{ cert.issuer }}
                 </div>
@@ -572,10 +683,34 @@
         <v-divider/>
         <v-card-text class="pa-4">
           <v-form ref="certForm">
-            <v-select v-if="!certUploadEnrollmentId" v-model="certEnrollmentId"
+
+            <!-- Toggle: enrolled course vs custom -->
+            <v-btn-toggle v-if="!certUploadEnrollmentId" v-model="certMode" mandatory rounded="xl" density="compact" class="mb-4 w-100">
+              <v-btn value="enrolled" class="flex-grow-1">
+                <v-icon start size="16">mdi-school</v-icon>My Enrolled Course
+              </v-btn>
+              <v-btn value="custom" class="flex-grow-1">
+                <v-icon start size="16">mdi-pencil</v-icon>Custom Course
+              </v-btn>
+            </v-btn-toggle>
+
+            <!-- Enrolled course dropdown -->
+            <v-select v-if="!certUploadEnrollmentId && certMode === 'enrolled'"
+              v-model="certEnrollmentId"
               :items="myCoursesList.map(c=>({title: c.course.title, value: c.enrollment_id}))"
               label="Select Course *" variant="outlined" density="compact" rounded class="mb-3"
               :rules="[v=>!!v||'Required']"/>
+
+            <!-- Custom course name + URL -->
+            <template v-if="!certUploadEnrollmentId && certMode === 'custom'">
+              <v-text-field v-model="certCustomCourseName"
+                label="Course Name *" variant="outlined" density="compact" rounded class="mb-3"
+                prepend-inner-icon="mdi-book-open-outline"
+                :rules="[v=>!!v||'Course name is required']"/>
+              <v-text-field v-model="certCourseUrl"
+                label="Course URL (optional)" variant="outlined" density="compact" rounded class="mb-3"
+                prepend-inner-icon="mdi-link" placeholder="https://…"/>
+            </template>
 
             <v-file-input v-model="certFile" label="Certificate File (PDF/Image) *"
               accept=".pdf,.jpg,.jpeg,.png" variant="outlined" density="compact" rounded
@@ -776,6 +911,14 @@ export default {
       // My Learning filter
       myLearningFilter: 'all',
 
+      // Enroll dialog
+      enrollDialog: false,
+      enrollSearch: '',
+      enrollingId: null,
+      loadingCatalog: false,
+
+      weekDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+
       // Course dialog
       courseDialog: false,
       selectedCourse: null,
@@ -785,6 +928,9 @@ export default {
       certUploadDialog: false,
       certUploadEnrollmentId: null,
       certEnrollmentId: null,
+      certMode: 'enrolled',          // 'enrolled' | 'custom'
+      certCustomCourseName: '',
+      certCourseUrl: '',
       certFile: null,
       certIssuer: '',
       certIssueDate: '',
@@ -870,6 +1016,12 @@ export default {
       if (this.myLearningFilter === 'completed') return this.myCoursesCompleted
       return this.myCoursesList
     },
+    enrollableCourses() {
+      const q = (this.enrollSearch || '').toLowerCase()
+      return this.allCourses.filter(c =>
+        !q || c.title.toLowerCase().includes(q) || c.category.toLowerCase().includes(q)
+      )
+    },
     adminCourseHeaders() {
       return [
         { title: 'Title', key: 'title', sortable: true },
@@ -932,6 +1084,43 @@ export default {
         this.myCoursesList = data
       } catch {}
       finally { this.loadingMyCourses = false }
+    },
+
+    async saveNotes(item) {
+      try {
+        await axios.put(`/api/v1/staff-development/enrollments/${item.enrollment_id}/notes`, {
+          notes: item.notes
+        })
+      } catch {}
+    },
+
+    async toggleReminder(item, val) {
+      item.reminder_enabled = val
+      await this.updateReminder(item, item.reminder_day)
+    },
+
+    async updateReminder(item, day) {
+      item.reminder_day = day
+      try {
+        await axios.put(`/api/v1/staff-development/enrollments/${item.enrollment_id}/reminder`, {
+          reminder_enabled: item.reminder_enabled,
+          reminder_day: item.reminder_day
+        })
+      } catch {}
+    },
+
+    async enrollInCourse(course) {
+      this.enrollingId = course.id
+      try {
+        await axios.post(`/api/v1/staff-development/courses/${course.id}/enroll`)
+        course.enrolled = true
+        await this.fetchMyCourses()
+        this.showSnack('Enrolled successfully!', 'success')
+      } catch (e) {
+        this.showSnack(e.response?.data?.message || 'Enrollment failed', 'error')
+      } finally {
+        this.enrollingId = null
+      }
     },
 
     async fetchMyCertificates() {
@@ -1019,6 +1208,9 @@ export default {
     openCertUploadGeneral() {
       this.certUploadEnrollmentId = null
       this.certEnrollmentId = null
+      this.certMode = 'enrolled'
+      this.certCustomCourseName = ''
+      this.certCourseUrl = ''
       this.certFile = null
       this.certIssuer = ''
       this.certIssueDate = ''
@@ -1031,11 +1223,31 @@ export default {
       const { valid } = await this.$refs.certForm.validate()
       if (!valid) return
 
-      const enrollmentId = this.certUploadEnrollmentId || this.certEnrollmentId
-      if (!enrollmentId) { this.showSnack('Please select a course', 'error'); return }
-
       this.uploadingCert = true
       try {
+        // ── External / custom course (no enrollment) ──────────────────────
+        if (!this.certUploadEnrollmentId && this.certMode === 'custom') {
+          const fd = new FormData()
+          fd.append('file', this.certFile)
+          fd.append('custom_course_name', this.certCustomCourseName)
+          if (this.certCourseUrl) fd.append('course_url', this.certCourseUrl)
+          if (this.certIssuer) fd.append('issuer', this.certIssuer)
+          if (this.certIssueDate) fd.append('issue_date', this.certIssueDate)
+          if (this.certExpiryDate) fd.append('expiry_date', this.certExpiryDate)
+          fd.append('is_public', this.certIsPublic ? '1' : '0')
+
+          await axios.post('/api/v1/staff-development/certificates/external', fd)
+          this.showSnack('Certificate uploaded!', 'success')
+          this.certUploadDialog = false
+          this.fetchMyCertificates()
+          this.fetchStats()
+          return
+        }
+
+        // ── Enrolled course ───────────────────────────────────────────────
+        const enrollmentId = this.certUploadEnrollmentId || this.certEnrollmentId
+        if (!enrollmentId) { this.showSnack('Please select a course', 'error'); return }
+
         const fd = new FormData()
         fd.append('file', this.certFile)
         if (this.certIssuer) fd.append('issuer', this.certIssuer)

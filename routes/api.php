@@ -381,6 +381,8 @@ Route::group(['prefix' => 'v1/deductions'], function () {
     // Enrollment
     Route::post('/courses/{courseId}/enroll', [StaffDevelopmentApiController::class, 'enroll']);
     Route::get('/my-courses', [StaffDevelopmentApiController::class, 'myCourses']);
+    Route::put('/enrollments/{enrollmentId}/notes', [StaffDevelopmentApiController::class, 'updateNotes']);
+    Route::put('/enrollments/{enrollmentId}/reminder', [StaffDevelopmentApiController::class, 'updateReminder']);
 
     // Lesson completion
     Route::post('/lessons/{lessonId}/complete', [StaffDevelopmentApiController::class, 'completeLesson']);
@@ -389,6 +391,7 @@ Route::group(['prefix' => 'v1/deductions'], function () {
     // Certificates
     Route::get('/my-certificates', [StaffDevelopmentApiController::class, 'myCertificates']);
     Route::post('/enrollments/{enrollmentId}/certificate', [StaffDevelopmentApiController::class, 'uploadCertificate']);
+    Route::post('/certificates/external', [StaffDevelopmentApiController::class, 'uploadExternalCertificate']);
     Route::delete('/certificates/{id}', [StaffDevelopmentApiController::class, 'deleteCertificate']);
 
     // Admin/HR views

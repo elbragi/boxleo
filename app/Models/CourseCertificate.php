@@ -10,6 +10,7 @@ class CourseCertificate extends Model
     protected $fillable = [
         'enrollment_id', 'user_id', 'course_id',
         'file_path', 'file_name', 'issuer', 'issue_date', 'expiry_date', 'is_public',
+        'custom_course_name', 'course_url',
     ];
 
     protected $casts = [

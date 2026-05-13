@@ -256,6 +256,7 @@
                       prepend-inner-icon="mdi-office-building-marker"
                       chips
                       closable-chips
+                      :disabled="formData.user_ids.length > 0"
                     />
 
                     <v-autocomplete
@@ -267,10 +268,28 @@
                       item-title="name"
                       item-value="id"
                       placeholder="All Departments"
-                      class="modern-field-v2"
+                      class="mb-6 modern-field-v2"
                       prepend-inner-icon="mdi-briefcase-variant-outline"
                       chips
                       closable-chips
+                      :disabled="formData.user_ids.length > 0"
+                    />
+
+                    <v-autocomplete
+                      v-model="formData.user_ids"
+                      :items="employees"
+                      label="Specific Employees"
+                      variant="outlined"
+                      multiple
+                      :item-title="e => `${e.firstname} ${e.lastname}`"
+                      item-value="id"
+                      placeholder="All employees (or pick individuals)"
+                      class="modern-field-v2"
+                      prepend-inner-icon="mdi-account-multiple-outline"
+                      chips
+                      closable-chips
+                      hint="Selecting individuals overrides branch/department targeting"
+                      persistent-hint
                     />
 
                     <!-- Email Forwarding Option -->
@@ -419,8 +438,10 @@
           <!-- Metadata Chips -->
           <div class="mt-8 d-flex flex-wrap gap-2 pt-4 border-top">
              <div class="text-caption text-medium-emphasis mr-2 d-flex align-center">Target Groups:</div>
+             <v-chip v-if="!viewedAnnouncement.units?.length && !viewedAnnouncement.departments?.length && !viewedAnnouncement.targeted_users?.length" size="x-small" label class="text-xxs font-weight-bold">Everyone</v-chip>
              <v-chip v-for="unit in viewedAnnouncement.units" :key="'u'+unit.id" size="x-small" label class="text-xxs font-weight-bold">Branch: {{ unit.name }}</v-chip>
              <v-chip v-for="dept in viewedAnnouncement.departments" :key="'d'+dept.id" size="x-small" label class="text-xxs font-weight-bold">Dept: {{ dept.name }}</v-chip>
+             <v-chip v-for="emp in viewedAnnouncement.targeted_users" :key="'e'+emp.id" size="x-small" color="primary" label class="text-xxs font-weight-bold">{{ emp.firstname }} {{ emp.lastname }}</v-chip>
           </div>
         </v-card-text>
         
@@ -452,6 +473,7 @@ export default {
       announcements: [],
       departments: [],
       units: [],
+      employees: [],
       attachments: [],
       viewedAnnouncement: null,
       editedIndex: -1,
@@ -470,6 +492,7 @@ export default {
       formData: {
         department_ids: [],
         unit_ids: [],
+        user_ids: [],
         send_email: true,
       }
     };
@@ -518,6 +541,7 @@ export default {
     this.fetchAnnouncements();
     this.fetchDepartments();
     this.fetchUnits();
+    this.fetchEmployees();
   },
 
   methods: {
@@ -547,11 +571,20 @@ export default {
         });
     },
 
+    fetchEmployees() {
+      axios.get('/api/v1/users')
+        .then(response => {
+          this.employees = Array.isArray(response.data)
+            ? response.data
+            : (response.data.users ?? []);
+        });
+    },
+
     createAnnouncement() {
       this.editedIndex = -1;
       this.editedAnnouncement = Object.assign({}, this.defaultAnnouncement);
       this.attachments = [];
-      this.formData = { department_ids: [], unit_ids: [], send_email: true };
+      this.formData = { department_ids: [], unit_ids: [], user_ids: [], send_email: true };
       this.showDialog = true;
     },
 
@@ -562,6 +595,7 @@ export default {
       this.formData = {
         department_ids: item.departments ? item.departments.map(dept => dept.id) : [],
         unit_ids: item.units ? item.units.map(unit => unit.id) : [],
+        user_ids: item.targeted_users ? item.targeted_users.map(u => u.id) : [],
         send_email: true
       };
       this.attachments = []; // Laravel handling of edit attachments varies, usually start fresh or manage existing ones
@@ -595,6 +629,7 @@ export default {
       
       this.formData.department_ids.forEach(id => fd.append('department_ids[]', id));
       this.formData.unit_ids.forEach(id => fd.append('unit_ids[]', id));
+      this.formData.user_ids.forEach(id => fd.append('user_ids[]', id));
       fd.append('send_email', this.formData.send_email ? 1 : 0);
       
       if (this.attachments && this.attachments.length) {

@@ -55,6 +55,9 @@ class Kernel extends ConsoleKernel
 
             $schedule->job(new \App\Jobs\DailyAttendanceJob)->dailyAt('9:59');
 
+            // Study reminders — runs daily at 08:00; command checks which day it is
+            $schedule->command('study:send-reminders')->dailyAt('08:00');
+
 
 
     }

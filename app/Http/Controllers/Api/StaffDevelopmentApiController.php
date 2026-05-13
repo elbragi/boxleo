@@ -263,27 +263,58 @@ class StaffDevelopmentApiController extends Controller
             $certificate = CourseCertificate::where('enrollment_id', $enrollment->id)->first();
 
             return [
-                'enrollment_id' => $enrollment->id,
-                'status' => $enrollment->status,
-                'enrolled_at' => $enrollment->enrolled_at?->format('Y-m-d'),
-                'completed_at' => $enrollment->completed_at?->format('Y-m-d'),
-                'progress' => $progress,
+                'enrollment_id'   => $enrollment->id,
+                'status'          => $enrollment->status,
+                'enrolled_at'     => $enrollment->enrolled_at?->format('Y-m-d'),
+                'completed_at'    => $enrollment->completed_at?->format('Y-m-d'),
+                'progress'        => $progress,
                 'completed_lessons' => $completedCount,
-                'total_lessons' => $totalLessons,
+                'total_lessons'   => $totalLessons,
                 'has_certificate' => $certificate !== null,
+                'notes'           => $enrollment->notes,
+                'reminder_enabled' => (bool) $enrollment->reminder_enabled,
+                'reminder_day'    => $enrollment->reminder_day ?? 'Monday',
                 'course' => [
-                    'id' => $enrollment->course->id,
-                    'title' => $enrollment->course->title,
-                    'description' => $enrollment->course->description,
-                    'category' => $enrollment->course->category,
-                    'level' => $enrollment->course->level,
-                    'thumbnail' => $enrollment->course->thumbnail,
+                    'id'             => $enrollment->course->id,
+                    'title'          => $enrollment->course->title,
+                    'description'    => $enrollment->course->description,
+                    'category'       => $enrollment->course->category,
+                    'level'          => $enrollment->course->level,
+                    'thumbnail'      => $enrollment->course->thumbnail,
                     'duration_hours' => $enrollment->course->duration_hours,
                 ],
             ];
         });
 
         return response()->json($data);
+    }
+
+    public function updateNotes(Request $request, $enrollmentId)
+    {
+        $enrollment = CourseEnrollment::where('id', $enrollmentId)
+            ->where('user_id', Auth::id())->firstOrFail();
+
+        $enrollment->update(['notes' => $request->input('notes', '')]);
+
+        return response()->json(['message' => 'Notes saved']);
+    }
+
+    public function updateReminder(Request $request, $enrollmentId)
+    {
+        $request->validate([
+            'reminder_enabled' => 'required|boolean',
+            'reminder_day'     => 'nullable|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
+        ]);
+
+        $enrollment = CourseEnrollment::where('id', $enrollmentId)
+            ->where('user_id', Auth::id())->firstOrFail();
+
+        $enrollment->update([
+            'reminder_enabled' => $request->reminder_enabled,
+            'reminder_day'     => $request->reminder_day ?? $enrollment->reminder_day ?? 'Monday',
+        ]);
+
+        return response()->json(['message' => 'Reminder updated']);
     }
 
     // ─── Lesson Completion ───────────────────────────────────────────────────
@@ -396,6 +427,56 @@ class StaffDevelopmentApiController extends Controller
         ], 201);
     }
 
+    /**
+     * Upload a certificate for an external/custom course (no enrollment required).
+     * Employee can type a course name and/or paste a course URL.
+     */
+    public function uploadExternalCertificate(Request $request)
+    {
+        $request->validate([
+            'file'               => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'custom_course_name' => 'required|string|max:255',
+            'course_url'         => 'nullable|url|max:500',
+            'issuer'             => 'nullable|string|max:255',
+            'issue_date'         => 'nullable|date',
+            'expiry_date'        => 'nullable|date|after_or_equal:issue_date',
+            'is_public'          => 'nullable|boolean',
+        ]);
+
+        $userId = Auth::id();
+        $file   = $request->file('file');
+        $path   = $file->store("certificates/{$userId}", 'public');
+
+        $cert = CourseCertificate::create([
+            'enrollment_id'      => null,
+            'user_id'            => $userId,
+            'course_id'          => null,
+            'custom_course_name' => $request->custom_course_name,
+            'course_url'         => $request->course_url,
+            'file_path'          => $path,
+            'file_name'          => $file->getClientOriginalName(),
+            'issuer'             => $request->issuer,
+            'issue_date'         => $request->issue_date,
+            'expiry_date'        => $request->expiry_date,
+            'is_public'          => $request->boolean('is_public', true),
+        ]);
+
+        return response()->json([
+            'message' => 'Certificate uploaded successfully',
+            'certificate' => [
+                'id'                 => $cert->id,
+                'file_name'          => $cert->file_name,
+                'custom_course_name' => $cert->custom_course_name,
+                'course_url'         => $cert->course_url,
+                'issuer'             => $cert->issuer,
+                'issue_date'         => $cert->issue_date?->format('Y-m-d'),
+                'expiry_date'        => $cert->expiry_date?->format('Y-m-d'),
+                'is_public'          => $cert->is_public,
+                'url'                => Storage::url($cert->file_path),
+            ],
+        ], 201);
+    }
+
     public function myCertificates()
     {
         $userId = Auth::id();
@@ -403,19 +484,22 @@ class StaffDevelopmentApiController extends Controller
             ->where('user_id', $userId)->latest()->get();
 
         $data = $certificates->map(function ($cert) {
+            // Support both enrolled-course certs and external/custom certs
+            $course = $cert->course
+                ? ['id' => $cert->course->id, 'title' => $cert->course->title, 'category' => $cert->course->category]
+                : ['id' => null, 'title' => $cert->custom_course_name ?? 'External Certificate', 'category' => 'External'];
+
             return [
-                'id' => $cert->id,
-                'file_name' => $cert->file_name,
-                'issuer' => $cert->issuer,
-                'issue_date' => $cert->issue_date?->format('Y-m-d'),
-                'expiry_date' => $cert->expiry_date?->format('Y-m-d'),
-                'is_public' => $cert->is_public,
-                'url' => Storage::url($cert->file_path),
-                'course' => [
-                    'id' => $cert->course->id,
-                    'title' => $cert->course->title,
-                    'category' => $cert->course->category,
-                ],
+                'id'                 => $cert->id,
+                'file_name'          => $cert->file_name,
+                'custom_course_name' => $cert->custom_course_name,
+                'course_url'         => $cert->course_url,
+                'issuer'             => $cert->issuer,
+                'issue_date'         => $cert->issue_date?->format('Y-m-d'),
+                'expiry_date'        => $cert->expiry_date?->format('Y-m-d'),
+                'is_public'          => $cert->is_public,
+                'url'                => Storage::url($cert->file_path),
+                'course'             => $course,
             ];
         });
 

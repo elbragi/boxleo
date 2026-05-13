@@ -49,4 +49,9 @@ class Announcement extends Model
         return $this->belongsToMany(Unit::class, 'announcement_unit');
     }
 
+    public function targetedUsers()
+    {
+        return $this->belongsToMany(User::class, 'announcement_user');
+    }
+
 }

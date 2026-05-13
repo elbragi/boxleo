@@ -11,6 +11,7 @@ class CourseEnrollment extends Model
 {
     protected $fillable = [
         'course_id', 'user_id', 'enrolled_at', 'completed_at', 'status',
+        'notes', 'reminder_enabled', 'reminder_day',
     ];
 
     protected $casts = [
