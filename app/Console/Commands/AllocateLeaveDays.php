@@ -38,16 +38,19 @@ class AllocateLeaveDays extends Command
                 }
             });
         } else {
-            $this->info('Starting annual leave allocation: adding 1.75 days (excluding Interns and Attachees)...');
+            $maxDays = 7;
+            $this->info("Starting annual leave allocation: adding 1.75 days (cap: {$maxDays}, excluding Interns and Attachees)...");
             \App\Models\LeaveBalance::where('leave_type_id', 1)
                 ->whereHas('user', function ($query) {
                     $query->whereNotIn('designation_id', [5, 9]); // 5: Intern, 9: Attachee
                 })
-                ->chunk(100, function ($leaveBalances) {
+                ->chunk(100, function ($leaveBalances) use ($maxDays) {
                     foreach ($leaveBalances as $leaveBalance) {
-                        $leaveBalance->increment('allocated', 1.75);
-                        $leaveBalance->increment('balance', 1.75);
-                        $this->info("Updated Annual Leave for user_id: {$leaveBalance->user_id}. New Balance: {$leaveBalance->balance}");
+                        $newAllocated = min($leaveBalance->allocated + 1.75, $maxDays);
+                        $leaveBalance->allocated = $newAllocated;
+                        $leaveBalance->balance   = $newAllocated - $leaveBalance->taken;
+                        $leaveBalance->save();
+                        $this->info("Updated Annual Leave for user_id: {$leaveBalance->user_id}. Allocated: {$newAllocated}, Balance: {$leaveBalance->balance}");
                     }
                 });
         }

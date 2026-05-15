@@ -1249,7 +1249,8 @@ export default {
         { name: 'Duncan Yavan', isCBD: false },
         { name: 'Nicholas Amenya', isCBD: false },
         { name: 'Vitalis Wafula', isCBD: true },
-        { name: 'Sylvester Onyisi', isCBD: false }
+        { name: 'Sylvester Onyisi', isCBD: false },
+        { name: 'Mary Anyango', isCBD: false }
       ],
       riderSearch: '',
       
