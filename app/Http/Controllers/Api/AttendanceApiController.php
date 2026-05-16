@@ -746,14 +746,22 @@ class AttendanceApiController extends Controller
         // Get day of week (0 = Sunday, 6 = Saturday)
         $userDayOfWeek = $userTime->dayOfWeek;
 
-        // Parse weekend day configuration - handle both integer and array inputs
+        // Parse weekend day configuration — handle integers, day-name strings, or arrays of either
+        $dayNameMap = [
+            'sunday' => Carbon::SUNDAY, 'monday' => Carbon::MONDAY,
+            'tuesday' => Carbon::TUESDAY, 'wednesday' => Carbon::WEDNESDAY,
+            'thursday' => Carbon::THURSDAY, 'friday' => Carbon::FRIDAY,
+            'saturday' => Carbon::SATURDAY,
+        ];
         $weekendDays = [];
         if (isset($unit->weekend_day)) {
-            $weekendDays = is_array($unit->weekend_day)
-                ? $unit->weekend_day
-                : [$unit->weekend_day];
+            $raw = is_array($unit->weekend_day) ? $unit->weekend_day : [$unit->weekend_day];
+            foreach ($raw as $day) {
+                $weekendDays[] = is_numeric($day)
+                    ? (int) $day
+                    : ($dayNameMap[strtolower(trim($day))] ?? Carbon::SATURDAY);
+            }
         } else {
-            // Default to Saturday only if not configured
             $weekendDays = [Carbon::SATURDAY];
         }
 
@@ -1103,9 +1111,14 @@ class AttendanceApiController extends Controller
 
         $userDayOfWeek = $userTime->dayOfWeek;
 
-        $weekendDays = is_array($unit->weekend_day)
-            ? $unit->weekend_day
-            : [$unit->weekend_day ?? Carbon::SATURDAY];
+        $dayNameMap = [
+            'sunday' => Carbon::SUNDAY, 'monday' => Carbon::MONDAY,
+            'tuesday' => Carbon::TUESDAY, 'wednesday' => Carbon::WEDNESDAY,
+            'thursday' => Carbon::THURSDAY, 'friday' => Carbon::FRIDAY,
+            'saturday' => Carbon::SATURDAY,
+        ];
+        $rawDays = is_array($unit->weekend_day) ? $unit->weekend_day : [$unit->weekend_day ?? Carbon::SATURDAY];
+        $weekendDays = array_map(fn($d) => is_numeric($d) ? (int)$d : ($dayNameMap[strtolower(trim($d))] ?? Carbon::SATURDAY), $rawDays);
 
         $isWeekend = in_array($userDayOfWeek, $weekendDays);
         $holiday = Holiday::whereDate('date', $userTime->toDateString())->first();
