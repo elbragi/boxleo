@@ -225,8 +225,13 @@ class User extends Authenticatable
 
   public function canImpersonate($target): bool
   {
-    // Define logic to determine if the user can impersonate the target
-    return $this->hasRole('admin'); // Example condition
+    return $this->super_admin
+        || $this->is_hr
+        || $this->is_hod
+        || $this->is_coo
+        || $this->is_finance_manager
+        || $this->is_cfo
+        || $this->department_id === 3; // IT department
   }
 
   public function canBeImpersonated(): bool
