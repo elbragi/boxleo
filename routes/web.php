@@ -187,13 +187,46 @@ Route::group(['middleware' => ['auth']], function () {
 
 
 
-    // impersonate 
+    // impersonate
     Route::get('/impersonate/{id}', function ($id) {
-        $user = auth()->user();
-        $target = User::findOrFail($id);
+        $impersonator = auth()->user();
+        $target       = User::findOrFail($id);
 
-        if ($user->canImpersonate($target)) {
-            $user->impersonate($target);
+        if ($impersonator->canImpersonate($target)) {
+            $impersonator->impersonate($target);
+
+            // Fire security notifications
+            $ip = request()->ip();
+            $at = now()->format('D d M Y \a\t H:i T');
+
+            // 1. Notify the target (their account is being accessed)
+            $target->notify(new \App\Notifications\ImpersonationAlertNotification(
+                $impersonator, $target, $ip, $at, false
+            ));
+
+            // 2. Notify all super admins and HR managers as an audit trail
+            User::where(function ($q) {
+                    $q->where('super_admin', 1)
+                      ->orWhere('is_hr', 1);
+                })
+                ->where('id', '!=', $impersonator->id)
+                ->where('is_enabled', true)
+                ->get()
+                ->each(fn($admin) => $admin->notify(
+                    new \App\Notifications\ImpersonationAlertNotification(
+                        $impersonator, $target, $ip, $at, true
+                    )
+                ));
+
+            \Illuminate\Support\Facades\Log::warning('Impersonation started', [
+                'impersonator_id'   => $impersonator->id,
+                'impersonator_name' => $impersonator->firstname . ' ' . $impersonator->lastname,
+                'target_id'         => $target->id,
+                'target_name'       => $target->firstname . ' ' . $target->lastname,
+                'ip'                => $ip,
+                'at'                => $at,
+            ]);
+
             return redirect('/dashboard');
         }
 
