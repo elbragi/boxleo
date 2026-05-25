@@ -16,7 +16,7 @@
     "src": "node_modules/@mdi/font/fonts/materialdesignicons-webfont.woff2"
   },
   "resources/js/app.css": {
-    "file": "assets/app-a8990605.css",
+    "file": "assets/app-42749b87.css",
     "src": "resources/js/app.css"
   },
   "resources/js/app.js": {
@@ -27,9 +27,9 @@
       "assets/materialdesignicons-webfont-61e8aba5.ttf"
     ],
     "css": [
-      "assets/app-a8990605.css"
+      "assets/app-42749b87.css"
     ],
-    "file": "assets/app-7c7cf3f7.js",
+    "file": "assets/app-8b0b7dee.js",
     "isEntry": true,
     "src": "resources/js/app.js"
   },

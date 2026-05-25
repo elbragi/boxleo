@@ -81,16 +81,18 @@ class ReportApiController extends Controller
     {
         try {
             $validated = $request->validate([
-                'employee' => 'nullable|exists:users,id',
-                'attendanceStatus' => 'nullable|string|in:Present,Absent,Late,Excused',
-                'start' => 'nullable|date',
-                'end' => 'nullable|date',
+                'employee'         => 'nullable|exists:users,id',
+                'attendanceStatus' => 'nullable|string|in:In Time,Late',
+                'unit_id'          => 'nullable|exists:units,id',
+                'department_id'    => 'nullable|exists:departments,id',
+                'start'            => 'nullable|date',
+                'end'              => 'nullable|date',
             ]);
 
-            $query = Attendance::query();
+            $query = Attendance::with('user.unit', 'user.department');
 
-            $query->whereHas('user', function ($query) {
-                $query->whereNull('deleted_at');
+            $query->whereHas('user', function ($q) {
+                $q->whereNull('deleted_at');
             });
 
             if (!empty($validated['employee'])) {
@@ -101,6 +103,14 @@ class ReportApiController extends Controller
                 $query->where('status', $validated['attendanceStatus']);
             }
 
+            if (!empty($validated['unit_id'])) {
+                $query->whereHas('user', fn($q) => $q->where('unit_id', $validated['unit_id']));
+            }
+
+            if (!empty($validated['department_id'])) {
+                $query->whereHas('user', fn($q) => $q->where('department_id', $validated['department_id']));
+            }
+
             if (!empty($validated['start'])) {
                 $query->where('attendance_date', '>=', $validated['start']);
             }
@@ -109,36 +119,51 @@ class ReportApiController extends Controller
                 $query->where('attendance_date', '<=', $validated['end']);
             }
 
-            $attendanceRecords = $query->orderBy('created_at', 'desc')->get();
+            $attendanceRecords = $query->orderBy('attendance_date', 'desc')
+                                       ->orderBy('clock_in_time', 'asc')
+                                       ->get();
 
             $statuses = [
-                'total' => $attendanceRecords->count(),
+                'total'   => $attendanceRecords->count(),
                 'in_time' => $attendanceRecords->where('status', 'In Time')->count(),
-                'late' => $attendanceRecords->where('status', 'Late')->count(),
+                'late'    => $attendanceRecords->where('status', 'Late')->count(),
             ];
 
             return response()->json([
                 'attendanceReport' => $attendanceRecords->map(function ($record) {
+                    // Calculate hours worked if both clock-in and clock-out exist
+                    $duration = null;
+                    if ($record->clock_in_time && $record->clock_out_time) {
+                        try {
+                            $in  = \Carbon\Carbon::parse($record->attendance_date . ' ' . $record->clock_in_time);
+                            $out = \Carbon\Carbon::parse($record->attendance_date . ' ' . $record->clock_out_time);
+                            if ($out->gt($in)) {
+                                $mins = $in->diffInMinutes($out);
+                                $duration = floor($mins / 60) . 'h ' . ($mins % 60) . 'm';
+                            }
+                        } catch (\Exception $e) {}
+                    }
+
                     return [
-                        'id' => $record->id,
-                        'created_at' => $record->created_at->format('D d M Y H:i'),
-                        'clock_in' => $record->clock_in_time,
-                        'clock_out' => $record->clock_out_time,
-                        'name' => $record->user ? $record->user->firstname . ' ' . $record->user->lastname : 'deleted user',
-                        'status' => $record->status,
-                        'notes' => $record->notes,
+                        'id'              => $record->id,
                         'attendance_date' => $record->attendance_date,
+                        'clock_in'        => $record->clock_in_time,
+                        'clock_out'       => $record->clock_out_time,
+                        'duration'        => $duration,
+                        'name'            => $record->user
+                            ? $record->user->firstname . ' ' . $record->user->lastname
+                            : 'deleted user',
+                        'branch'          => $record->user?->unit?->name,
+                        'department'      => $record->user?->department?->name,
+                        'status'          => $record->status,
+                        'notes'           => $record->notes,
                     ];
                 }),
                 'attendanceReportStatuses' => $statuses,
             ]);
         } catch (\Exception $e) {
             Log::error('Failed to fetch attendance report: ' . $e->getMessage());
-
-            return response()->json([
-                'error' => 'Failed to fetch attendance report',
-                'message' => $e->getMessage(),
-            ], 500);
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
     public function attendanceExcelReport(Request $request)
