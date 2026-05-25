@@ -27,27 +27,13 @@ class ImpersonationAlertNotification extends Notification
             return [];
         }
 
-        // Audit copies go to admins/HR — always include email.
-        // Personal alerts (sent to the target) only include email if the target
-        // holds a privileged role; regular employees get an in-app notification only.
-        if ($this->isAdminCopy || $this->targetIsPrivileged()) {
-            return ['mail', 'database'];
+        // Audit copies to admins/HR are in-app only — no email.
+        // The account owner (target) always receives an email.
+        if ($this->isAdminCopy) {
+            return ['database'];
         }
 
-        return ['database'];
-    }
-
-    private function targetIsPrivileged(): bool
-    {
-        return (bool) (
-            $this->target->super_admin ||
-            $this->target->is_hr ||
-            $this->target->is_hod ||
-            $this->target->is_coo ||
-            $this->target->is_finance_manager ||
-            $this->target->is_cfo ||
-            $this->target->hasRole('admin')
-        );
+        return ['mail', 'database'];
     }
 
     public function toMail(object $notifiable): MailMessage
