@@ -204,11 +204,8 @@ Route::group(['middleware' => ['auth']], function () {
                 $impersonator, $target, $ip, $at, false
             ));
 
-            // 2. Notify all super admins and HR managers as an audit trail
-            User::where(function ($q) {
-                    $q->where('super_admin', 1)
-                      ->orWhere('is_hr', 1);
-                })
+            // 2. Notify HR only as an audit trail
+            User::where('is_hr', 1)
                 ->where('id', '!=', $impersonator->id)
                 ->where('is_enabled', true)
                 ->get()
