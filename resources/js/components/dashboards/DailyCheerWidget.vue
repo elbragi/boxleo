@@ -123,6 +123,18 @@ const QUOTES = [
   { text: "Main character energy isn't arrogance. It's knowing your story matters. ✨", author: "Boxleo", category: "Real Talk", color: "pink-accent-2", hex: "#e91e8c", icon: "mdi-chat-processing-outline" },
   { text: "Romanticize your growth era. This chapter genuinely deserves it. 📖", author: "Boxleo", category: "Real Talk", color: "pink-accent-2", hex: "#e91e8c", icon: "mdi-chat-processing-outline" },
   { text: "You can't pour from an empty cup. Rest is not laziness — it's maintenance. 🧘", author: "Boxleo", category: "Real Talk", color: "pink-accent-2", hex: "#e91e8c", icon: "mdi-chat-processing-outline" },
+  { text: "You survived 100% of your worst days so far. That's a pretty solid track record. 📊", author: "Boxleo", category: "Real Talk", color: "pink-accent-2", hex: "#e91e8c", icon: "mdi-chat-processing-outline" },
+  { text: "Bad days are just plot development. The comeback is always better. 📺", author: "Boxleo", category: "Real Talk", color: "pink-accent-2", hex: "#e91e8c", icon: "mdi-chat-processing-outline" },
+  { text: "Overthinking is just your brain trying to protect you. Thank it, then move on. 🧠", author: "Boxleo", category: "Real Talk", color: "pink-accent-2", hex: "#e91e8c", icon: "mdi-chat-processing-outline" },
+  { text: "Progress > perfection. Every single time. No notes. 📝", author: "Boxleo", category: "Real Talk", color: "pink-accent-2", hex: "#e91e8c", icon: "mdi-chat-processing-outline" },
+  { text: "Being a work in progress is not a flaw. It's literally the whole point. 🏗️", author: "Boxleo", category: "Real Talk", color: "pink-accent-2", hex: "#e91e8c", icon: "mdi-chat-processing-outline" },
+  { text: "Start before you're ready. Edit as you go. That's how growth actually works. ✏️", author: "Boxleo", category: "Real Talk", color: "pink-accent-2", hex: "#e91e8c", icon: "mdi-chat-processing-outline" },
+  { text: "Drink water. Touch grass. Believe in yourself. In that order. 🌱", author: "Boxleo", category: "Real Talk", color: "pink-accent-2", hex: "#e91e8c", icon: "mdi-chat-processing-outline" },
+  { text: "The audacity to believe in yourself is wildly underrated. Have more of it. 😤", author: "Boxleo", category: "Real Talk", color: "pink-accent-2", hex: "#e91e8c", icon: "mdi-chat-processing-outline" },
+  { text: "That thing you keep putting off? It's nowhere near as scary as the regret of never trying. 😬", author: "Boxleo", category: "Real Talk", color: "pink-accent-2", hex: "#e91e8c", icon: "mdi-chat-processing-outline" },
+  { text: "Your future self is rooting for you so hard right now. Don't let them down. 🏆", author: "Boxleo", category: "Real Talk", color: "pink-accent-2", hex: "#e91e8c", icon: "mdi-chat-processing-outline" },
+  { text: "Normalize celebrating tiny wins. You showed up today? That counts. 🎉", author: "Boxleo", category: "Real Talk", color: "pink-accent-2", hex: "#e91e8c", icon: "mdi-chat-processing-outline" },
+  { text: "Your vibe is your most powerful asset. Protect it accordingly. 🛡️", author: "Boxleo", category: "Real Talk", color: "pink-accent-2", hex: "#e91e8c", icon: "mdi-chat-processing-outline" },
 
   // ── Boxleo originals ─────────────────────────────────────────────────────
   { text: "Every delivery on time is a promise kept. You make that possible.", author: "Boxleo", category: "Boxleo", color: "cyan-darken-2", hex: "#0891b2", icon: "mdi-package-variant-closed" },
