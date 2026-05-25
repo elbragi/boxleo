@@ -114,6 +114,16 @@ const QUOTES = [
   { text: "You can't use up creativity. The more you use, the more you have.", author: "Maya Angelou", category: "Creativity", color: "blue-darken-1", hex: "#1d4ed8", icon: "mdi-palette-outline" },
   { text: "The worst enemy of creativity is self-doubt.", author: "Sylvia Plath", category: "Creativity", color: "blue-darken-1", hex: "#1d4ed8", icon: "mdi-palette-outline" },
 
+  // ── Real Talk ────────────────────────────────────────────────────────────
+  { text: "Plot twist: you're actually further along than you think. 🤯", author: "Boxleo", category: "Real Talk", color: "pink-accent-2", hex: "#e91e8c", icon: "mdi-chat-processing-outline" },
+  { text: "Not every day will be a 10. A 6 that shows up beats a 10 that doesn't. 💪", author: "Boxleo", category: "Real Talk", color: "pink-accent-2", hex: "#e91e8c", icon: "mdi-chat-processing-outline" },
+  { text: "Monday called. You answered. That's already a win. ☕", author: "Boxleo", category: "Real Talk", color: "pink-accent-2", hex: "#e91e8c", icon: "mdi-chat-processing-outline" },
+  { text: "Hot take: the you from a year ago would genuinely be impressed right now. 🔥", author: "Boxleo", category: "Real Talk", color: "pink-accent-2", hex: "#e91e8c", icon: "mdi-chat-processing-outline" },
+  { text: "Your 9-to-5 is building your 5-to-9. Keep going. 🚀", author: "Boxleo", category: "Real Talk", color: "pink-accent-2", hex: "#e91e8c", icon: "mdi-chat-processing-outline" },
+  { text: "Main character energy isn't arrogance. It's knowing your story matters. ✨", author: "Boxleo", category: "Real Talk", color: "pink-accent-2", hex: "#e91e8c", icon: "mdi-chat-processing-outline" },
+  { text: "Romanticize your growth era. This chapter genuinely deserves it. 📖", author: "Boxleo", category: "Real Talk", color: "pink-accent-2", hex: "#e91e8c", icon: "mdi-chat-processing-outline" },
+  { text: "You can't pour from an empty cup. Rest is not laziness — it's maintenance. 🧘", author: "Boxleo", category: "Real Talk", color: "pink-accent-2", hex: "#e91e8c", icon: "mdi-chat-processing-outline" },
+
   // ── Boxleo originals ─────────────────────────────────────────────────────
   { text: "Every delivery on time is a promise kept. You make that possible.", author: "Boxleo", category: "Boxleo", color: "cyan-darken-2", hex: "#0891b2", icon: "mdi-package-variant-closed" },
   { text: "The version of you that shows up today is the foundation of who you'll be tomorrow.", author: "Boxleo", category: "Boxleo", color: "cyan-darken-2", hex: "#0891b2", icon: "mdi-package-variant-closed" },
