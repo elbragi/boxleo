@@ -84,6 +84,48 @@
       </v-col>
     </v-row>
 
+    <!-- ── Daily Cheer + Leave Balances ── -->
+    <v-row no-gutters class="mb-4">
+      <v-col cols="12" md="7" class="pa-2">
+        <daily-cheer-widget class="animate-up h-100" style="animation-delay:0.42s" />
+      </v-col>
+      <v-col cols="12" md="5" class="pa-2">
+        <v-card class="glass-card animate-up h-100" style="animation-delay:0.46s">
+          <div class="d-flex align-center gap-2 px-5 pt-4 pb-2">
+            <div class="icon-pill" style="background:linear-gradient(135deg,#00b894,#55efc4);width:32px;height:32px">
+              <v-icon icon="mdi-calendar-heart" size="16" color="white" />
+            </div>
+            <span class="text-subtitle-1 font-weight-black">Leave Balances</span>
+          </div>
+          <v-card-text class="pa-4 pt-2 leave-scroll">
+            <div v-if="!leaveBalances.length" class="text-caption text-disabled text-center py-4">
+              <v-icon size="32" color="grey-lighten-2">mdi-calendar-blank-outline</v-icon>
+              <div class="mt-1">No leave balances found</div>
+            </div>
+            <div v-for="lb in leaveBalances" :key="lb.id" class="lb-row mb-4">
+              <div class="d-flex justify-space-between align-center mb-1">
+                <span class="text-body-2 font-weight-bold">{{ lb.leave_type?.name }}</span>
+                <v-chip size="x-small" variant="tonal"
+                  :color="lb.balance > 0 ? 'success' : 'error'"
+                  class="font-weight-black">
+                  {{ lb.balance }} day{{ lb.balance !== 1 ? 's' : '' }} left
+                </v-chip>
+              </div>
+              <v-progress-linear
+                :model-value="lb.allocated ? Math.min(Math.round((lb.balance / lb.allocated) * 100), 100) : 0"
+                :color="lb.balance / lb.allocated > 0.5 ? 'success' : lb.balance > 0 ? 'warning' : 'error'"
+                rounded height="5" bg-color="rgba(0,0,0,0.06)"
+              />
+              <div class="d-flex justify-space-between mt-1">
+                <span class="text-xxs text-disabled">Allocated: {{ lb.allocated }}</span>
+                <span class="text-xxs text-disabled">Taken: {{ lb.taken }}</span>
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+
     <!-- ── Main grid: Profile + Calendar ── -->
     <v-row class="mt-0">
 
@@ -258,8 +300,11 @@
 </template>
 
 <script>
+import DailyCheerWidget from './DailyCheerWidget.vue';
+
 export default {
   name: 'EmployeeDashboard',
+  components: { DailyCheerWidget },
   props: {
     user: { type: Object, required: true },
   },
@@ -280,6 +325,7 @@ export default {
         days: null, manager: null, hod: null, document: null, comment: null,
       },
       isLoading: false,
+      leaveBalances: [],
     };
   },
 
@@ -363,6 +409,7 @@ export default {
     this.fetchUsers();
     this.fetchLeaveTypes();
     this.fetchHolidays();
+    this.fetchLeaveBalances();
   },
 
   methods: {
@@ -385,6 +432,11 @@ export default {
     fetchHolidays() {
       axios.get('/api/v1/holidays').then(r => {
         this.holidays = r.data.holidays || r.data || [];
+      });
+    },
+    fetchLeaveBalances() {
+      axios.get(`/api/v1/leave-balances?user_ids=${this.user.id}`).then(r => {
+        this.leaveBalances = r.data.leaveBalances || [];
       });
     },
     async submitNewLeave() {
@@ -491,6 +543,11 @@ export default {
 /* ── Animations ── */
 @keyframes fadeUp { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
 .animate-up { animation: fadeUp .45s ease both; }
+
+/* ── Leave balances scroll ── */
+.leave-scroll { max-height: 270px; overflow-y: auto; }
+.leave-scroll::-webkit-scrollbar { width: 4px; }
+.leave-scroll::-webkit-scrollbar-thumb { background: rgba(13,138,188,.25); border-radius: 4px; }
 
 /* ── Misc ── */
 .shadow-glow { box-shadow: 0 4px 20px rgba(13,138,188,.35) !important; }
