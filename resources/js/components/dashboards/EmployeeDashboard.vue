@@ -436,7 +436,8 @@ export default {
     },
     fetchLeaveBalances() {
       axios.get(`/api/v1/leave-balances?user_ids=${this.user.id}`).then(r => {
-        this.leaveBalances = r.data.leaveBalances || [];
+        const list = r.data.leaveBalances || [];
+        this.leaveBalances = list.slice().sort((a, b) => (b.balance ?? 0) - (a.balance ?? 0));
       });
     },
     async submitNewLeave() {

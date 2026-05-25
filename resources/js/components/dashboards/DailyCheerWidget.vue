@@ -39,87 +39,87 @@
 
 <script>
 const QUOTES = [
+  // ── Reflection ───────────────────────────────────────────────────────────
+  { text: "The longest journey you will ever take is the eighteen inches from your head to your heart.", author: "Andrew Bennett", category: "Reflection", color: "deep-purple", hex: "#7c3aed", icon: "mdi-head-heart-outline" },
+  { text: "Between stimulus and response there is a space. In that space lies our power to choose our response.", author: "Viktor Frankl", category: "Reflection", color: "deep-purple", hex: "#7c3aed", icon: "mdi-head-heart-outline" },
+  { text: "What you are is what you have been. What you'll be is what you do now.", author: "Buddha", category: "Reflection", color: "deep-purple", hex: "#7c3aed", icon: "mdi-head-heart-outline" },
+  { text: "The unexamined life is not worth living.", author: "Socrates", category: "Reflection", color: "deep-purple", hex: "#7c3aed", icon: "mdi-head-heart-outline" },
+  { text: "You cannot solve a problem with the same mind that created it.", author: "Albert Einstein", category: "Reflection", color: "deep-purple", hex: "#7c3aed", icon: "mdi-head-heart-outline" },
+  { text: "Almost everything will work again if you unplug it for a few minutes — including you.", author: "Anne Lamott", category: "Reflection", color: "deep-purple", hex: "#7c3aed", icon: "mdi-head-heart-outline" },
+  { text: "Your emotions are visitors. You don't have to invite them to stay.", author: "Rumi", category: "Reflection", color: "deep-purple", hex: "#7c3aed", icon: "mdi-head-heart-outline" },
+  { text: "Sit quietly sometimes. The answers you seek live in the silence between your thoughts.", author: "Boxleo", category: "Reflection", color: "deep-purple", hex: "#7c3aed", icon: "mdi-head-heart-outline" },
+
+  // ── Tomorrow ─────────────────────────────────────────────────────────────
+  { text: "The best time to plant a tree was twenty years ago. The second best time is now.", author: "Chinese Proverb", category: "Tomorrow", color: "teal-darken-2", hex: "#0f766e", icon: "mdi-calendar-arrow-right" },
+  { text: "You can't go back and change the beginning, but you can start where you are and change the ending.", author: "C.S. Lewis", category: "Tomorrow", color: "teal-darken-2", hex: "#0f766e", icon: "mdi-calendar-arrow-right" },
+  { text: "Tomorrow belongs to those who prepare for it today.", author: "Malcolm X", category: "Tomorrow", color: "teal-darken-2", hex: "#0f766e", icon: "mdi-calendar-arrow-right" },
+  { text: "Don't let yesterday take up too much of today.", author: "Will Rogers", category: "Tomorrow", color: "teal-darken-2", hex: "#0f766e", icon: "mdi-calendar-arrow-right" },
+  { text: "Your future is created by what you do today, not tomorrow.", author: "Robert Kiyosaki", category: "Tomorrow", color: "teal-darken-2", hex: "#0f766e", icon: "mdi-calendar-arrow-right" },
+  { text: "One year from now you will wish you had started today.", author: "Karen Lamb", category: "Tomorrow", color: "teal-darken-2", hex: "#0f766e", icon: "mdi-calendar-arrow-right" },
+  { text: "The future starts with the choices you make in ordinary moments.", author: "Boxleo", category: "Tomorrow", color: "teal-darken-2", hex: "#0f766e", icon: "mdi-calendar-arrow-right" },
+
+  // ── Growth ──────────────────────────────────────────────────────────────
+  { text: "The only person you are destined to become is the person you decide to be.", author: "Ralph Waldo Emerson", category: "Growth", color: "green-darken-2", hex: "#16a34a", icon: "mdi-sprout" },
+  { text: "You don't learn to walk by following rules. You learn by doing and falling over.", author: "Richard Branson", category: "Growth", color: "green-darken-2", hex: "#16a34a", icon: "mdi-sprout" },
+  { text: "Strive not to be a success, but rather to be of value.", author: "Albert Einstein", category: "Growth", color: "green-darken-2", hex: "#16a34a", icon: "mdi-sprout" },
+  { text: "Comfort is the enemy of growth. Stretch a little every day.", author: "Boxleo", category: "Growth", color: "green-darken-2", hex: "#16a34a", icon: "mdi-sprout" },
+  { text: "Don't be pushed around by the fears in your mind. Be led by the dreams in your heart.", author: "Roy T. Bennett", category: "Growth", color: "green-darken-2", hex: "#16a34a", icon: "mdi-sprout" },
+  { text: "Invest in yourself. Your career is the engine of your wealth.", author: "Paul Clitheroe", category: "Growth", color: "green-darken-2", hex: "#16a34a", icon: "mdi-sprout" },
+  { text: "Be not afraid of growing slowly. Be afraid only of standing still.", author: "Chinese Proverb", category: "Growth", color: "green-darken-2", hex: "#16a34a", icon: "mdi-sprout" },
+  { text: "What would you attempt to do if you knew you could not fail?", author: "Robert H. Schuller", category: "Growth", color: "green-darken-2", hex: "#16a34a", icon: "mdi-sprout" },
+
   // ── Wisdom ──────────────────────────────────────────────────────────────
-  { text: "The only way to do great work is to love what you do.", author: "Steve Jobs", category: "Wisdom", color: "deep-purple", hex: "#7c3aed", icon: "mdi-star-four-points" },
-  { text: "It does not matter how slowly you go, as long as you do not stop.", author: "Confucius", category: "Wisdom", color: "deep-purple", hex: "#7c3aed", icon: "mdi-star-four-points" },
-  { text: "Knowing yourself is the beginning of all wisdom.", author: "Aristotle", category: "Wisdom", color: "deep-purple", hex: "#7c3aed", icon: "mdi-star-four-points" },
-  { text: "The secret of getting ahead is getting started.", author: "Mark Twain", category: "Wisdom", color: "deep-purple", hex: "#7c3aed", icon: "mdi-star-four-points" },
-  { text: "Life is what happens when you're busy making other plans.", author: "John Lennon", category: "Wisdom", color: "deep-purple", hex: "#7c3aed", icon: "mdi-star-four-points" },
-  { text: "In the middle of every difficulty lies opportunity.", author: "Albert Einstein", category: "Wisdom", color: "deep-purple", hex: "#7c3aed", icon: "mdi-star-four-points" },
-  { text: "The mind that opens to a new idea never returns to its original size.", author: "Albert Einstein", category: "Wisdom", color: "deep-purple", hex: "#7c3aed", icon: "mdi-star-four-points" },
-  { text: "Clarity comes from engagement, not thought.", author: "Marie Forleo", category: "Wisdom", color: "deep-purple", hex: "#7c3aed", icon: "mdi-star-four-points" },
+  { text: "It does not matter how slowly you go, as long as you do not stop.", author: "Confucius", category: "Wisdom", color: "indigo-darken-1", hex: "#4338ca", icon: "mdi-star-four-points" },
+  { text: "Knowing yourself is the beginning of all wisdom.", author: "Aristotle", category: "Wisdom", color: "indigo-darken-1", hex: "#4338ca", icon: "mdi-star-four-points" },
+  { text: "Life is what happens when you're busy making other plans.", author: "John Lennon", category: "Wisdom", color: "indigo-darken-1", hex: "#4338ca", icon: "mdi-star-four-points" },
+  { text: "In the middle of every difficulty lies opportunity.", author: "Albert Einstein", category: "Wisdom", color: "indigo-darken-1", hex: "#4338ca", icon: "mdi-star-four-points" },
+  { text: "The mind that opens to a new idea never returns to its original size.", author: "Albert Einstein", category: "Wisdom", color: "indigo-darken-1", hex: "#4338ca", icon: "mdi-star-four-points" },
+  { text: "We are not human beings having a spiritual experience. We are spiritual beings having a human experience.", author: "Pierre Teilhard de Chardin", category: "Wisdom", color: "indigo-darken-1", hex: "#4338ca", icon: "mdi-star-four-points" },
+  { text: "The man who moves a mountain begins by carrying away small stones.", author: "Confucius", category: "Wisdom", color: "indigo-darken-1", hex: "#4338ca", icon: "mdi-star-four-points" },
 
   // ── Motivation ──────────────────────────────────────────────────────────
-  { text: "Success is not final, failure is not fatal — it is the courage to continue that counts.", author: "Winston Churchill", category: "Motivation", color: "orange-darken-2", hex: "#ea580c", icon: "mdi-lightning-bolt" },
-  { text: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt", category: "Motivation", color: "orange-darken-2", hex: "#ea580c", icon: "mdi-lightning-bolt" },
-  { text: "Don't watch the clock; do what it does — keep going.", author: "Sam Levenson", category: "Motivation", color: "orange-darken-2", hex: "#ea580c", icon: "mdi-lightning-bolt" },
   { text: "You are never too old to set another goal or to dream a new dream.", author: "C.S. Lewis", category: "Motivation", color: "orange-darken-2", hex: "#ea580c", icon: "mdi-lightning-bolt" },
   { text: "It always seems impossible until it's done.", author: "Nelson Mandela", category: "Motivation", color: "orange-darken-2", hex: "#ea580c", icon: "mdi-lightning-bolt" },
   { text: "Act as if what you do makes a difference. It does.", author: "William James", category: "Motivation", color: "orange-darken-2", hex: "#ea580c", icon: "mdi-lightning-bolt" },
   { text: "We generate fears while we sit. We overcome them by action.", author: "Dr. Henry Link", category: "Motivation", color: "orange-darken-2", hex: "#ea580c", icon: "mdi-lightning-bolt" },
   { text: "You don't have to be great to start, but you have to start to be great.", author: "Zig Ziglar", category: "Motivation", color: "orange-darken-2", hex: "#ea580c", icon: "mdi-lightning-bolt" },
-
-  // ── Teamwork ────────────────────────────────────────────────────────────
-  { text: "Alone we can do so little; together we can do so much.", author: "Helen Keller", category: "Teamwork", color: "teal-darken-1", hex: "#0D8ABC", icon: "mdi-account-group" },
-  { text: "Coming together is a beginning, staying together is progress, working together is success.", author: "Henry Ford", category: "Teamwork", color: "teal-darken-1", hex: "#0D8ABC", icon: "mdi-account-group" },
-  { text: "If everyone is moving forward together, then success takes care of itself.", author: "Henry Ford", category: "Teamwork", color: "teal-darken-1", hex: "#0D8ABC", icon: "mdi-account-group" },
-  { text: "Great things in business are never done by one person — they're done by a team.", author: "Steve Jobs", category: "Teamwork", color: "teal-darken-1", hex: "#0D8ABC", icon: "mdi-account-group" },
-  { text: "None of us is as smart as all of us.", author: "Ken Blanchard", category: "Teamwork", color: "teal-darken-1", hex: "#0D8ABC", icon: "mdi-account-group" },
-  { text: "Teamwork divides the task and multiplies the success.", author: "Boxleo Team", category: "Teamwork", color: "teal-darken-1", hex: "#0D8ABC", icon: "mdi-account-group" },
-  { text: "The strength of the team is each individual member. The strength of each member is the team.", author: "Phil Jackson", category: "Teamwork", color: "teal-darken-1", hex: "#0D8ABC", icon: "mdi-account-group" },
-
-  // ── Leadership ──────────────────────────────────────────────────────────
-  { text: "A good leader takes a little more than their share of the blame, a little less than their share of the credit.", author: "Arnold H. Glasow", category: "Leadership", color: "indigo-darken-1", hex: "#4338ca", icon: "mdi-crown-outline" },
-  { text: "The function of leadership is to produce more leaders, not more followers.", author: "Ralph Nader", category: "Leadership", color: "indigo-darken-1", hex: "#4338ca", icon: "mdi-crown-outline" },
-  { text: "Leadership is not about being in charge. It is about taking care of those in your charge.", author: "Simon Sinek", category: "Leadership", color: "indigo-darken-1", hex: "#4338ca", icon: "mdi-crown-outline" },
-  { text: "People buy into the leader before they buy into the vision.", author: "John C. Maxwell", category: "Leadership", color: "indigo-darken-1", hex: "#4338ca", icon: "mdi-crown-outline" },
-  { text: "A leader is one who knows the way, goes the way, and shows the way.", author: "John C. Maxwell", category: "Leadership", color: "indigo-darken-1", hex: "#4338ca", icon: "mdi-crown-outline" },
-
-  // ── Growth ──────────────────────────────────────────────────────────────
-  { text: "The only person you are destined to become is the person you decide to be.", author: "Ralph Waldo Emerson", category: "Growth", color: "green-darken-2", hex: "#16a34a", icon: "mdi-sprout" },
-  { text: "Growth is never by mere chance; it is the result of forces working together.", author: "James Cash Penney", category: "Growth", color: "green-darken-2", hex: "#16a34a", icon: "mdi-sprout" },
-  { text: "You don't learn to walk by following rules. You learn by doing and falling over.", author: "Richard Branson", category: "Growth", color: "green-darken-2", hex: "#16a34a", icon: "mdi-sprout" },
-  { text: "Strive not to be a success, but rather to be of value.", author: "Albert Einstein", category: "Growth", color: "green-darken-2", hex: "#16a34a", icon: "mdi-sprout" },
-  { text: "Your limitation — it's only your imagination.", author: "Unknown", category: "Growth", color: "green-darken-2", hex: "#16a34a", icon: "mdi-sprout" },
-  { text: "Comfort is the enemy of growth. Stretch a little every day.", author: "Boxleo", category: "Growth", color: "green-darken-2", hex: "#16a34a", icon: "mdi-sprout" },
-  { text: "Don't be pushed around by the fears in your mind. Be led by the dreams in your heart.", author: "Roy T. Bennett", category: "Growth", color: "green-darken-2", hex: "#16a34a", icon: "mdi-sprout" },
-
-  // ── Excellence ──────────────────────────────────────────────────────────
-  { text: "We are what we repeatedly do. Excellence, then, is not an act, but a habit.", author: "Aristotle", category: "Excellence", color: "amber-darken-3", hex: "#d97706", icon: "mdi-medal-outline" },
-  { text: "Quality is not an act, it is a habit.", author: "Aristotle", category: "Excellence", color: "amber-darken-3", hex: "#d97706", icon: "mdi-medal-outline" },
-  { text: "Perfection is not attainable, but if we chase perfection we can catch excellence.", author: "Vince Lombardi", category: "Excellence", color: "amber-darken-3", hex: "#d97706", icon: "mdi-medal-outline" },
-  { text: "The difference between ordinary and extraordinary is that little extra.", author: "Jimmy Johnson", category: "Excellence", color: "amber-darken-3", hex: "#d97706", icon: "mdi-medal-outline" },
-  { text: "Do what you do so well that they'll want to see it again.", author: "Walt Disney", category: "Excellence", color: "amber-darken-3", hex: "#d97706", icon: "mdi-medal-outline" },
-  { text: "Excellence is doing ordinary things extraordinarily well.", author: "John W. Gardner", category: "Excellence", color: "amber-darken-3", hex: "#d97706", icon: "mdi-medal-outline" },
+  { text: "The secret of getting ahead is getting started.", author: "Mark Twain", category: "Motivation", color: "orange-darken-2", hex: "#ea580c", icon: "mdi-lightning-bolt" },
 
   // ── Resilience ──────────────────────────────────────────────────────────
   { text: "Fall seven times, stand up eight.", author: "Japanese Proverb", category: "Resilience", color: "red-darken-2", hex: "#dc2626", icon: "mdi-shield-half-full" },
   { text: "The bamboo that bends is stronger than the oak that resists.", author: "Japanese Proverb", category: "Resilience", color: "red-darken-2", hex: "#dc2626", icon: "mdi-shield-half-full" },
-  { text: "Hard times never last, but hard people do.", author: "Robert H. Schuller", category: "Resilience", color: "red-darken-2", hex: "#dc2626", icon: "mdi-shield-half-full" },
   { text: "A smooth sea never made a skilled sailor.", author: "Franklin D. Roosevelt", category: "Resilience", color: "red-darken-2", hex: "#dc2626", icon: "mdi-shield-half-full" },
   { text: "Character is not built in good times. It's revealed in tough ones.", author: "Boxleo", category: "Resilience", color: "red-darken-2", hex: "#dc2626", icon: "mdi-shield-half-full" },
   { text: "Every setback is a setup for a comeback.", author: "T.D. Jakes", category: "Resilience", color: "red-darken-2", hex: "#dc2626", icon: "mdi-shield-half-full" },
+  { text: "You were given this life because you are strong enough to live it.", author: "Robin Sharma", category: "Resilience", color: "red-darken-2", hex: "#dc2626", icon: "mdi-shield-half-full" },
 
   // ── Purpose ─────────────────────────────────────────────────────────────
   { text: "The two most important days in your life are the day you are born and the day you find out why.", author: "Mark Twain", category: "Purpose", color: "pink-darken-1", hex: "#db2777", icon: "mdi-compass-outline" },
-  { text: "Your work is going to fill a large part of your life. Be satisfied.", author: "Steve Jobs", category: "Purpose", color: "pink-darken-1", hex: "#db2777", icon: "mdi-compass-outline" },
   { text: "He who has a why to live can bear almost any how.", author: "Friedrich Nietzsche", category: "Purpose", color: "pink-darken-1", hex: "#db2777", icon: "mdi-compass-outline" },
   { text: "The purpose of life is not to be happy, but to matter.", author: "Leo Rosten", category: "Purpose", color: "pink-darken-1", hex: "#db2777", icon: "mdi-compass-outline" },
   { text: "Your job title tells people what you do. Your purpose tells people why it matters.", author: "Boxleo", category: "Purpose", color: "pink-darken-1", hex: "#db2777", icon: "mdi-compass-outline" },
+  { text: "Don't ask what the world needs. Ask what makes you come alive — and then go do it.", author: "Howard Thurman", category: "Purpose", color: "pink-darken-1", hex: "#db2777", icon: "mdi-compass-outline" },
+
+  // ── Excellence ──────────────────────────────────────────────────────────
+  { text: "We are what we repeatedly do. Excellence, then, is not an act, but a habit.", author: "Aristotle", category: "Excellence", color: "amber-darken-3", hex: "#d97706", icon: "mdi-medal-outline" },
+  { text: "The difference between ordinary and extraordinary is that little extra.", author: "Jimmy Johnson", category: "Excellence", color: "amber-darken-3", hex: "#d97706", icon: "mdi-medal-outline" },
+  { text: "Do what you do so well that they'll want to see it again.", author: "Walt Disney", category: "Excellence", color: "amber-darken-3", hex: "#d97706", icon: "mdi-medal-outline" },
+  { text: "Excellence is doing ordinary things extraordinarily well.", author: "John W. Gardner", category: "Excellence", color: "amber-darken-3", hex: "#d97706", icon: "mdi-medal-outline" },
+  { text: "Take pride in how far you've come. Have faith in how far you can go.", author: "Michael Josephson", category: "Excellence", color: "amber-darken-3", hex: "#d97706", icon: "mdi-medal-outline" },
 
   // ── Creativity ──────────────────────────────────────────────────────────
-  { text: "Creativity is intelligence having fun.", author: "Albert Einstein", category: "Creativity", color: "cyan-darken-2", hex: "#0891b2", icon: "mdi-palette-outline" },
-  { text: "Innovation distinguishes between a leader and a follower.", author: "Steve Jobs", category: "Creativity", color: "cyan-darken-2", hex: "#0891b2", icon: "mdi-palette-outline" },
-  { text: "Every artist was first an amateur.", author: "Ralph Waldo Emerson", category: "Creativity", color: "cyan-darken-2", hex: "#0891b2", icon: "mdi-palette-outline" },
-  { text: "Think left and think right and think low and think high. Oh, the thinks you can think if only you try.", author: "Dr. Seuss", category: "Creativity", color: "cyan-darken-2", hex: "#0891b2", icon: "mdi-palette-outline" },
-  { text: "Creativity is not a talent. It is a way of operating.", author: "John Cleese", category: "Creativity", color: "cyan-darken-2", hex: "#0891b2", icon: "mdi-palette-outline" },
+  { text: "Creativity is intelligence having fun.", author: "Albert Einstein", category: "Creativity", color: "blue-darken-1", hex: "#1d4ed8", icon: "mdi-palette-outline" },
+  { text: "Every artist was first an amateur.", author: "Ralph Waldo Emerson", category: "Creativity", color: "blue-darken-1", hex: "#1d4ed8", icon: "mdi-palette-outline" },
+  { text: "Creativity is not a talent. It is a way of operating.", author: "John Cleese", category: "Creativity", color: "blue-darken-1", hex: "#1d4ed8", icon: "mdi-palette-outline" },
+  { text: "You can't use up creativity. The more you use, the more you have.", author: "Maya Angelou", category: "Creativity", color: "blue-darken-1", hex: "#1d4ed8", icon: "mdi-palette-outline" },
+  { text: "The worst enemy of creativity is self-doubt.", author: "Sylvia Plath", category: "Creativity", color: "blue-darken-1", hex: "#1d4ed8", icon: "mdi-palette-outline" },
 
   // ── Boxleo originals ─────────────────────────────────────────────────────
-  { text: "Every delivery delivered on time is a promise kept. You make that possible.", author: "Boxleo", category: "Boxleo", color: "teal-darken-2", hex: "#0f766e", icon: "mdi-package-variant-closed" },
-  { text: "Behind every satisfied customer is a team that cared enough to get it right.", author: "Boxleo", category: "Boxleo", color: "teal-darken-2", hex: "#0f766e", icon: "mdi-package-variant-closed" },
-  { text: "Boxleo moves fast because you show up. Thank you.", author: "Boxleo", category: "Boxleo", color: "teal-darken-2", hex: "#0f766e", icon: "mdi-package-variant-closed" },
-  { text: "The route to excellence begins at your desk, every single morning.", author: "Boxleo", category: "Boxleo", color: "teal-darken-2", hex: "#0f766e", icon: "mdi-package-variant-closed" },
-  { text: "Small consistent actions build a great company. You are one of those actions.", author: "Boxleo", category: "Boxleo", color: "teal-darken-2", hex: "#0f766e", icon: "mdi-package-variant-closed" },
+  { text: "Every delivery on time is a promise kept. You make that possible.", author: "Boxleo", category: "Boxleo", color: "cyan-darken-2", hex: "#0891b2", icon: "mdi-package-variant-closed" },
+  { text: "The version of you that shows up today is the foundation of who you'll be tomorrow.", author: "Boxleo", category: "Boxleo", color: "cyan-darken-2", hex: "#0891b2", icon: "mdi-package-variant-closed" },
+  { text: "Small consistent actions build a great life. Start with today.", author: "Boxleo", category: "Boxleo", color: "cyan-darken-2", hex: "#0891b2", icon: "mdi-package-variant-closed" },
+  { text: "You are writing your story with every choice you make. Make it one worth reading.", author: "Boxleo", category: "Boxleo", color: "cyan-darken-2", hex: "#0891b2", icon: "mdi-package-variant-closed" },
+  { text: "The best investment you'll ever make is in becoming a better version of yourself.", author: "Boxleo", category: "Boxleo", color: "cyan-darken-2", hex: "#0891b2", icon: "mdi-package-variant-closed" },
 ];
 
 export default {
