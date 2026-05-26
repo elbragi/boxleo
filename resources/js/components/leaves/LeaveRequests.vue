@@ -114,15 +114,22 @@
 
 
             <template v-slot:item.comment="{ item }">
-
-              <span v-if="item.comment">
-                {{ truncateText(item.comment) }}
-                <v-tooltip activator="parent" location="top"> {{ item.comment }}</v-tooltip>
-              </span>
-              <span v-else>
-                {{ truncateText(item.comment) }}
-              </span>
-
+              <v-menu v-if="item.comment" open-on-hover :close-on-content-click="false" location="top" offset="8">
+                <template #activator="{ props }">
+                  <span v-bind="props" class="comment-trigger">
+                    {{ truncateText(item.comment) }}
+                    <v-icon size="13" color="primary" class="ml-1 comment-icon">mdi-comment-text-outline</v-icon>
+                  </span>
+                </template>
+                <div class="comment-glass-card">
+                  <div class="comment-glass-header">
+                    <v-icon size="14" color="primary">mdi-comment-text-outline</v-icon>
+                    <span class="cg-label">Employee Note</span>
+                  </div>
+                  <p class="cg-body">{{ item.comment }}</p>
+                </div>
+              </v-menu>
+              <span v-else class="text-disabled text-caption">—</span>
             </template>
             <template v-slot:item.document="{ item }">
               <a v-if="item.document" :href="getDocumentUrl(item.document)" target="_blank" :title="item.document">
@@ -829,3 +836,47 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.comment-trigger {
+  display: inline-flex;
+  align-items: center;
+  cursor: default;
+  border-bottom: 1px dashed rgba(13, 138, 188, 0.4);
+  padding-bottom: 1px;
+}
+.comment-icon { opacity: 0.6; transition: opacity .2s; }
+.comment-trigger:hover .comment-icon { opacity: 1; }
+
+.comment-glass-card {
+  max-width: 280px;
+  padding: 12px 14px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(13, 138, 188, 0.1);
+}
+
+.comment-glass-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+.cg-label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #0D8ABC;
+}
+.cg-body {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: #1e293b;
+  word-break: break-word;
+}
+</style>
