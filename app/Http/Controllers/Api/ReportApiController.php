@@ -9,6 +9,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Asset;
 use App\Models\Attendance;
 use App\Models\Leave;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
@@ -166,6 +168,118 @@ class ReportApiController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
+    public function dailyAttendanceReport(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'date'          => 'required|date',
+                'unit_id'       => 'nullable|exists:units,id',
+                'department_id' => 'nullable|exists:departments,id',
+                'employee'      => 'nullable|exists:users,id',
+            ]);
+
+            $date = Carbon::parse($validated['date'])->toDateString();
+
+            // Build employee query
+            $employeeQuery = User::with('unit', 'department', 'designation')
+                ->where('is_enabled', true)
+                ->whereNull('deleted_at')
+                ->whereHas('roles', fn($q) => $q->where('name', 'employee'));
+
+            if (!empty($validated['unit_id'])) {
+                $employeeQuery->where('unit_id', $validated['unit_id']);
+            }
+            if (!empty($validated['department_id'])) {
+                $employeeQuery->where('department_id', $validated['department_id']);
+            }
+            if (!empty($validated['employee'])) {
+                $employeeQuery->where('id', $validated['employee']);
+            }
+
+            $employees = $employeeQuery->get();
+
+            // Attendance records for the day
+            $attendances = Attendance::where('attendance_date', $date)
+                ->whereIn('user_id', $employees->pluck('id'))
+                ->get()
+                ->keyBy('user_id');
+
+            // Approved leaves covering the day
+            $leaves = Leave::with('leave_type')
+                ->whereIn('user_id', $employees->pluck('id'))
+                ->where('status', 'Approved')
+                ->where('from', '<=', $date)
+                ->where('to', '>=', $date)
+                ->get()
+                ->keyBy('user_id');
+
+            $rows = $employees->map(function ($emp) use ($attendances, $leaves, $date) {
+                $att   = $attendances->get($emp->id);
+                $leave = $leaves->get($emp->id);
+
+                if ($att) {
+                    $status    = $att->status; // 'In Time' or 'Late'
+                    $clockIn   = $att->clock_in_time;
+                    $clockOut  = $att->clock_out_time;
+                    $leaveType = null;
+                    $duration  = null;
+                    if ($clockIn && $clockOut) {
+                        try {
+                            $in   = Carbon::parse($date . ' ' . $clockIn);
+                            $out  = Carbon::parse($date . ' ' . $clockOut);
+                            if ($out->gt($in)) {
+                                $mins     = $in->diffInMinutes($out);
+                                $duration = floor($mins / 60) . 'h ' . ($mins % 60) . 'm';
+                            }
+                        } catch (\Exception $e) {}
+                    }
+                } elseif ($leave) {
+                    $status    = 'On Leave';
+                    $clockIn   = null;
+                    $clockOut  = null;
+                    $duration  = null;
+                    $leaveType = $leave->leave_type?->name;
+                } else {
+                    $status    = 'Absent';
+                    $clockIn   = null;
+                    $clockOut  = null;
+                    $duration  = null;
+                    $leaveType = null;
+                }
+
+                return [
+                    'id'          => $emp->id,
+                    'name'        => $emp->firstname . ' ' . $emp->lastname,
+                    'branch'      => $emp->unit?->name,
+                    'department'  => $emp->department?->name,
+                    'designation' => $emp->designation?->name,
+                    'clock_in'    => $clockIn,
+                    'clock_out'   => $clockOut,
+                    'duration'    => $duration,
+                    'status'      => $status,
+                    'leave_type'  => $leaveType,
+                ];
+            })->sortBy('name')->values();
+
+            $statuses = [
+                'total'    => $rows->count(),
+                'in_time'  => $rows->where('status', 'In Time')->count(),
+                'late'     => $rows->where('status', 'Late')->count(),
+                'on_leave' => $rows->where('status', 'On Leave')->count(),
+                'absent'   => $rows->where('status', 'Absent')->count(),
+            ];
+
+            return response()->json([
+                'report'   => $rows,
+                'statuses' => $statuses,
+                'date'     => $date,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Daily attendance report failed: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
     public function attendanceExcelReport(Request $request)
     {
         $attendances = json_decode($request->input('attendances'));
