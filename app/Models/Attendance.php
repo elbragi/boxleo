@@ -9,7 +9,7 @@ class Attendance extends Model
 {
     use SoftDeletes;
     protected $fillable = [
-        'attendance_date','user_id','clock_in_time','clock_out_time','status','is_present','notes','overtime_hours','hours_worked','status'
+        'attendance_date','user_id','clock_in_time','clock_out_time','status','is_present','notes','overtime_hours','hours_worked','status','in_field'
     ];
 
     public function user()

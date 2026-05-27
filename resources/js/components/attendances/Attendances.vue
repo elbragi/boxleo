@@ -171,6 +171,14 @@
 
               </template>
 
+              <template v-slot:item.in_field="{ item }">
+                <v-chip v-if="item.in_field" size="x-small" color="orange" variant="tonal" class="font-weight-bold">
+                  <v-icon start size="12">mdi-map-marker-radius-outline</v-icon>
+                  In Field
+                </v-chip>
+                <span v-else class="text-disabled text-caption">—</span>
+              </template>
+
               <template v-slot:item.user.monthly_rating="{ item }">
                 <v-chip :color="item.user.monthly_rating > 80 ? 'blue' : (item.user.monthly_rating >= 66 ? 'green' : (item.user.monthly_rating >= 50 ? 'orange-darken-3' : 'red'))" size="small" dark>
                   {{ item.user.monthly_rating }}%
@@ -249,6 +257,21 @@
             </v-select>
             <v-text-field v-model="newAttendance.time" placeholder="08:00:00" label="Time" type="text">
             </v-text-field>
+            <v-switch
+              v-if="newAttendance.attendance_type === 'Clock In'"
+              v-model="newAttendance.in_field"
+              color="orange"
+              hide-details
+              class="mt-1"
+            >
+              <template #label>
+                <div class="d-flex align-center gap-2">
+                  <v-icon size="18" :color="newAttendance.in_field ? 'orange' : 'grey'">mdi-map-marker-radius-outline</v-icon>
+                  <span class="text-body-2 font-weight-medium">In Field</span>
+                  <span class="text-caption text-medium-emphasis">(e.g. driver, field worker)</span>
+                </div>
+              </template>
+            </v-switch>
           </v-card-text>
           <v-card-actions class="justify-content-end">
             <v-btn @click="addAttendanceDialog = false" color="error"><v-icon>mdi-cancel</v-icon>Cancel</v-btn>
@@ -351,6 +374,7 @@ export default {
         { title: 'Time in ', key: 'clock_in_time' },
         { title: 'Status', key: 'status' },
         { title: 'Time Out ', key: 'clock_out_time' },
+        { title: 'In Field', key: 'in_field' },
         { title: 'Presence Rating', key: 'user.monthly_rating' },
         { title: 'Late Days', key: 'user.monthly_late_days' },
         { title: 'Absent Days', key: 'user.monthly_absent_days' },
@@ -368,6 +392,7 @@ export default {
         time: null,
         attendance_type: '',
         notes: '',
+        in_field: false,
       },
       viewAttendanceModal: false,
       editAttendance: {

@@ -518,9 +518,10 @@ class AttendanceApiController extends Controller
     {
         $request->validate([
             'attendance_type' => 'required|in:clock_in,clock_out',
-            'user_id' => 'required|exists:users,id',
+            'user_id'         => 'required|exists:users,id',
             'attendance_date' => 'required|date',
-            'time' => 'required|date_format:H:i:s',
+            'time'            => 'required|date_format:H:i:s',
+            'in_field'        => 'nullable|boolean',
         ]);
     }
 
@@ -633,6 +634,9 @@ class AttendanceApiController extends Controller
         }
 
         $existingAttendance->is_present = true;
+        if ($request->attendance_type === 'clock_in') {
+            $existingAttendance->in_field = (bool) $request->input('in_field', false);
+        }
         $existingAttendance->save();
 
         Log::info('Attendance record saved successfully', ['attendance' => $existingAttendance]);
