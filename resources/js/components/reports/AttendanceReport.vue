@@ -339,8 +339,18 @@ export default {
         unit_id: this.monthly.unit_id, department_id: this.monthly.department_id,
       })
         .then(res => {
-          this.monthly.report     = res.data.report;
-          this.monthly.leaveTypes = res.data.leave_types;
+          const report     = res.data.report;
+          const leaveTypes = res.data.leave_types;
+
+          // Sort leave types by total usage across all employees — most data on the left
+          const totals = {};
+          leaveTypes.forEach(lt => {
+            totals[lt.id] = report.reduce((sum, row) => sum + (row['lt_' + lt.id] || 0), 0);
+          });
+          leaveTypes.sort((a, b) => totals[b.id] - totals[a.id]);
+
+          this.monthly.report     = report;
+          this.monthly.leaveTypes = leaveTypes;
           this.monthly.monthLabel = res.data.month_label;
         })
         .catch(err => console.error(err))
