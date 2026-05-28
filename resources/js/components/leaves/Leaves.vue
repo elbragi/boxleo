@@ -487,44 +487,20 @@ export default {
         });
     },
     filterLeaves() {
-      const filterParams = new URLSearchParams();
-
-      // Append user_ids if any
-      if (this.filterOptions.user_ids.length) {
-        filterParams.append('user_ids', this.filterOptions.user_ids.join(','));
-      }
-
-      // Append leave_type_ids if any
-      if (this.filterOptions.leave_type_ids.length) {
-        filterParams.append('leave_type_ids', this.filterOptions.leave_type_ids.join(','));
-      }
-
-      // Append unit_ids if any
-      if (this.filterOptions.unit_ids.length) {
-        filterParams.append('unit_ids', this.filterOptions.unit_ids.join(','));
-      }
-
-      // Append application_date if provided
-      if (this.filterOptions.application_date) {
-        filterParams.append('application_date', this.filterOptions.application_date);
-      }
-
-      // Append statuses if any
-      // if (this.filterOptions.statuses.length) {
-      //     filterParams.append('statuses', this.filterOptions.statuses.join(','));
-      // }
-
       this.loading = true;
+      const params = {};
+      if ((this.filterOptions.user_ids       || []).length) params.user_ids       = this.filterOptions.user_ids;
+      if ((this.filterOptions.leave_type_ids || []).length) params.leave_type_ids = this.filterOptions.leave_type_ids;
+      if ((this.filterOptions.unit_ids       || []).length) params.unit_ids       = this.filterOptions.unit_ids;
+      if ((this.filterOptions.statuses       || []).length) params.statuses       = this.filterOptions.statuses;
+      if (this.filterOptions.application_date)              params.application_date = this.filterOptions.application_date;
 
-      const apiUrl = this.base_url + 'api/v1/leaves?' + filterParams.toString();
-
-      axios.get(apiUrl)
+      axios.get(this.base_url + 'api/v1/leaves', { params })
         .then(response => {
           if (response.data.errors) {
             console.error('Errors returned from API:', response.data.errors);
           } else {
             this.leaves = response.data.leaves;
-            //this.calculateDashboardSummary();
           }
         })
         .catch(error => {
