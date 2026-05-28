@@ -149,10 +149,10 @@
                 <th class="sticky-col col-num">#</th>
                 <th class="sticky-col col-name">Employee Name</th>
                 <th class="col-num text-success">Present ✓</th>
-                <th v-for="lt in monthly.leaveTypes" :key="lt.id" class="col-num">{{ leaveShortName(lt.name) }}</th>
-                <th class="col-num text-orange">In Field £</th>
                 <th class="col-num text-error">Late Φ</th>
                 <th class="col-num text-warning">Absent ×</th>
+                <th v-for="lt in monthly.leaveTypes" :key="lt.id" class="col-num">{{ leaveShortName(lt.name) }}</th>
+                <th class="col-num text-orange">In Field £</th>
                 <th class="col-num text-info">Leave Bal.</th>
               </tr>
             </thead>
@@ -163,20 +163,20 @@
                 <td class="col-num">
                   <span :class="row.present > 0 ? 'text-success font-weight-bold' : 'text-disabled'">{{ row.present || 0 }}</span>
                 </td>
-                <td v-for="lt in monthly.leaveTypes" :key="lt.id" class="col-num">
-                  <span v-if="row['lt_' + lt.id] > 0" class="text-primary font-weight-bold">{{ row['lt_' + lt.id] }}</span>
-                  <span v-else class="text-disabled">0</span>
-                </td>
-                <td class="col-num">
-                  <span v-if="row.in_field > 0" class="text-orange font-weight-bold">{{ row.in_field }}</span>
-                  <span v-else class="text-disabled">0</span>
-                </td>
                 <td class="col-num">
                   <span v-if="row.late > 0" class="text-error font-weight-bold">{{ row.late }}</span>
                   <span v-else class="text-disabled">0</span>
                 </td>
                 <td class="col-num">
                   <span v-if="row.absent > 0" class="text-warning font-weight-bold">{{ row.absent }}</span>
+                  <span v-else class="text-disabled">0</span>
+                </td>
+                <td v-for="lt in monthly.leaveTypes" :key="lt.id" class="col-num">
+                  <span v-if="row['lt_' + lt.id] > 0" class="text-primary font-weight-bold">{{ row['lt_' + lt.id] }}</span>
+                  <span v-else class="text-disabled">0</span>
+                </td>
+                <td class="col-num">
+                  <span v-if="row.in_field > 0" class="text-orange font-weight-bold">{{ row.in_field }}</span>
                   <span v-else class="text-disabled">0</span>
                 </td>
                 <td class="col-num">
