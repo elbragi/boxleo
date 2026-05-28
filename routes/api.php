@@ -235,6 +235,7 @@ Route::middleware('auth:sanctum')->group(function () {
   Route::post('v1/attendance-report', [ReportApiController::class, 'attendanceReport']);
   Route::post('v1/attendance-report/daily', [ReportApiController::class, 'dailyAttendanceReport']);
   Route::post('v1/attendance-report/monthly-summary', [ReportApiController::class, 'monthlySummaryReport']);
+  Route::post('v1/attendance-report/monthly-summary/excel', [ReportApiController::class, 'monthlySummaryExcel']);
   Route::post('v1/leave-report', [ReportApiController::class, 'leaveReport']);
   Route::post('v1/attendance-report/excel', [ReportApiController::class, 'attendanceExcelReport']);
   Route::post('v1/leave-report/excel', [ReportApiController::class, 'leaveExcelReport']);

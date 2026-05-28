@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Exports\AssetReportExport;
 use App\Exports\AttendanceExport;
 use App\Exports\LeaveExport;
+use App\Exports\MonthlySummaryExport;
 use App\Http\Controllers\Controller;
 use App\Models\Asset;
 use App\Models\Attendance;
@@ -462,6 +463,43 @@ class ReportApiController extends Controller
         $attendances = json_decode($request->input('attendances'));
         return Excel::download(new AttendanceExport($attendances), 'attendance_report.xlsx');
 
+    }
+
+    public function monthlySummaryExcel(Request $request)
+    {
+        $validated = $request->validate([
+            'year'        => 'required|integer',
+            'month'       => 'required|integer|between:1,12',
+            'report'      => 'required|string',
+            'leave_types' => 'required|string',
+            'month_label' => 'required|string',
+        ]);
+
+        $report     = json_decode($validated['report'],     true);
+        $leaveTypes = json_decode($validated['leave_types'], true);
+        $monthLabel = $validated['month_label'];
+
+        // Attach short display name for Blade view
+        $shortNames = [
+            'Annual Leave'         => 'Annual ⊙',
+            'Maternity Leave'      => 'Maternity M',
+            'Paternity Leave'      => 'Paternity P',
+            'Sick Leave'           => 'Sick ⊕',
+            'Compassionate Leave'  => 'Compassionate φ',
+            'Study Leave'          => 'Study ∞',
+            'Monthly Saturday Off' => 'Sat Off +',
+            'Sunday Compensation'  => 'Sun Comp $',
+            'Holiday compensation' => 'Hol Comp ☆',
+            'Unpaid Leave'         => 'Unpaid',
+            'Rest Day'             => 'Rest Day',
+        ];
+        foreach ($leaveTypes as &$lt) {
+            $lt['short'] = $shortNames[$lt['name']] ?? $lt['name'];
+        }
+        unset($lt);
+
+        $filename = str_replace(' ', '_', $monthLabel) . '_Attendance_Report.xlsx';
+        return Excel::download(new MonthlySummaryExport($report, $leaveTypes, $monthLabel), $filename);
     }
 
     public function leaveExcelReport(Request $request)

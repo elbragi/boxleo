@@ -359,32 +359,26 @@ export default {
 
     exportMonthlyExcel() {
       if (!this.monthly.report.length) return;
-
-      // Build CSV-style data and trigger download
-      const leaveTypes = this.monthly.leaveTypes;
-      const headers = [
-        '#', 'Employee Name', 'Present ✓',
-        ...leaveTypes.map(lt => this.leaveShortName(lt.name)),
-        'In Field £', 'Late Φ', 'Absent ×', 'Leave Balance',
-      ];
-
-      const rows = this.monthly.report.map((row, i) => [
-        i + 1, row.name, row.present,
-        ...leaveTypes.map(lt => row['lt_' + lt.id] || 0),
-        row.in_field, row.late, row.absent, row.leave_balance,
-      ]);
-
-      const csvContent = [headers, ...rows]
-        .map(r => r.map(c => `"${c}"`).join(','))
-        .join('\n');
-
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      const url  = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href  = url;
-      link.download = `${this.monthly.monthLabel.replace(' ', '_')}_Attendance_Report.csv`;
-      link.click();
-      URL.revokeObjectURL(url);
+      axios({
+        url: '/api/v1/attendance-report/monthly-summary/excel',
+        method: 'POST',
+        responseType: 'blob',
+        data: {
+          year:        this.monthly.year,
+          month:       this.monthly.month,
+          month_label: this.monthly.monthLabel,
+          report:      JSON.stringify(this.monthly.report),
+          leave_types: JSON.stringify(this.monthly.leaveTypes),
+        },
+      }).then(res => {
+        const url  = window.URL.createObjectURL(new Blob([res.data]));
+        const link = document.createElement('a');
+        link.href  = url;
+        link.setAttribute('download', `${this.monthly.monthLabel.replace(' ', '_')}_Attendance_Report.xlsx`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      });
     },
 
     leaveShortName(name) {
