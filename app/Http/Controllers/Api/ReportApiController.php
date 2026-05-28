@@ -8,9 +8,12 @@ use App\Exports\LeaveExport;
 use App\Http\Controllers\Controller;
 use App\Models\Asset;
 use App\Models\Attendance;
+use App\Models\Holiday;
 use App\Models\Leave;
+use App\Models\LeaveType;
 use App\Models\User;
 use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
@@ -276,6 +279,180 @@ class ReportApiController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Daily attendance report failed: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function monthlySummaryReport(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'year'          => 'required|integer|min:2020|max:2100',
+                'month'         => 'required|integer|between:1,12',
+                'unit_id'       => 'nullable|exists:units,id',
+                'department_id' => 'nullable|exists:departments,id',
+            ]);
+
+            $year  = (int) $validated['year'];
+            $month = (int) $validated['month'];
+
+            $start = Carbon::create($year, $month, 1)->startOfDay();
+            $end   = Carbon::create($year, $month, 1)->endOfMonth()->endOfDay();
+            $startStr = $start->toDateString();
+            $endStr   = $end->toDateString();
+
+            // All leave types
+            $leaveTypes = LeaveType::orderBy('name')->get();
+
+            // Employees
+            $empQuery = User::with(['unit', 'department', 'leaveBalances.leaveType'])
+                ->where('is_enabled', true)
+                ->whereNull('deleted_at')
+                ->whereHas('roles', fn($q) => $q->where('name', 'employee'));
+
+            if (!empty($validated['unit_id'])) {
+                $empQuery->where('unit_id', $validated['unit_id']);
+            }
+            if (!empty($validated['department_id'])) {
+                $empQuery->where('department_id', $validated['department_id']);
+            }
+
+            $employees = $empQuery->get();
+
+            // Attendance records for the month, keyed by user_id
+            $attendances = Attendance::whereBetween('attendance_date', [$startStr, $endStr])
+                ->whereIn('user_id', $employees->pluck('id'))
+                ->get()
+                ->groupBy('user_id');
+
+            // Approved leaves overlapping the month, keyed by user_id
+            $leaves = Leave::with('leave_type')
+                ->where('status', 'Approved')
+                ->whereIn('user_id', $employees->pluck('id'))
+                ->where('from', '<=', $endStr)
+                ->where('to',   '>=', $startStr)
+                ->get()
+                ->groupBy('user_id');
+
+            // Public holidays in the month
+            $holidayDates = Holiday::whereBetween('date', [$startStr, $endStr])
+                ->pluck('date')
+                ->map(fn($d) => Carbon::parse($d)->toDateString())
+                ->unique()
+                ->toArray();
+
+            // Day-name → Carbon integer map
+            $dayNameMap = [
+                'sunday' => Carbon::SUNDAY, 'monday' => Carbon::MONDAY,
+                'tuesday' => Carbon::TUESDAY, 'wednesday' => Carbon::WEDNESDAY,
+                'thursday' => Carbon::THURSDAY, 'friday' => Carbon::FRIDAY,
+                'saturday' => Carbon::SATURDAY,
+            ];
+
+            $rows = $employees->map(function ($emp) use (
+                $attendances, $leaves, $leaveTypes,
+                $start, $end, $startStr, $endStr,
+                $holidayDates, $dayNameMap
+            ) {
+                $empAtts   = $attendances->get($emp->id, collect());
+                $empLeaves = $leaves->get($emp->id, collect());
+
+                // Resolve weekend days for this employee's unit
+                $weekendInts = [];
+                $unit = $emp->unit;
+                if ($unit && isset($unit->weekend_day)) {
+                    $raw = is_array($unit->weekend_day) ? $unit->weekend_day : [$unit->weekend_day];
+                    foreach ($raw as $d) {
+                        $weekendInts[] = is_numeric($d)
+                            ? (int) $d
+                            : ($dayNameMap[strtolower(trim($d))] ?? Carbon::SATURDAY);
+                    }
+                } else {
+                    $weekendInts = [Carbon::SATURDAY, Carbon::SUNDAY];
+                }
+
+                // Count working days in the month for this employee
+                $workingDays = 0;
+                foreach (CarbonPeriod::create($start, $end) as $day) {
+                    $dateStr = $day->toDateString();
+                    if (!in_array($day->dayOfWeek, $weekendInts) && !in_array($dateStr, $holidayDates)) {
+                        $workingDays++;
+                    }
+                }
+
+                // Present = unique dates with an attendance record
+                $presentDays = $empAtts->unique('attendance_date')->count();
+                $lateDays    = $empAtts->where('status', 'Late')->count();
+                $inFieldDays = $empAtts->where('in_field', true)->count();
+
+                // Holiday count (public holidays in month, exclude weekends)
+                $holidayCount = count(array_filter($holidayDates, function ($d) use ($weekendInts) {
+                    return !in_array(Carbon::parse($d)->dayOfWeek, $weekendInts);
+                }));
+
+                // Leave days per type (clipped to month boundaries)
+                $leaveCounts = [];
+                foreach ($leaveTypes as $lt) {
+                    $leaveCounts[$lt->id] = 0;
+                }
+
+                foreach ($empLeaves as $leave) {
+                    $leaveStart = Carbon::parse($leave->from)->max($start);
+                    $leaveEnd   = Carbon::parse($leave->to)->min($end);
+
+                    if ($leaveStart->gt($leaveEnd)) continue;
+
+                    // Count working days within the leave period
+                    $leaveDays = 0;
+                    foreach (CarbonPeriod::create($leaveStart, $leaveEnd) as $day) {
+                        if (!in_array($day->dayOfWeek, $weekendInts)) {
+                            $leaveDays++;
+                        }
+                    }
+
+                    $typeId = $leave->leave_type?->id;
+                    if ($typeId && isset($leaveCounts[$typeId])) {
+                        $leaveCounts[$typeId] += $leaveDays;
+                    }
+                }
+
+                $totalLeaveDays = array_sum($leaveCounts);
+                $absent = max(0, $workingDays - $presentDays - $totalLeaveDays - $holidayCount);
+
+                // Annual leave balance
+                $annualBalance = $emp->leaveBalances
+                    ->filter(fn($lb) => strtolower($lb->leaveType?->name ?? '') === 'annual leave')
+                    ->first()?->balance ?? '—';
+
+                $row = [
+                    'id'             => $emp->id,
+                    'name'           => $emp->firstname . ' ' . $emp->lastname,
+                    'department'     => $emp->department?->name,
+                    'branch'         => $emp->unit?->name,
+                    'present'        => $presentDays,
+                    'late'           => $lateDays,
+                    'in_field'       => $inFieldDays,
+                    'absent'         => $absent,
+                    'holidays'       => $holidayCount,
+                    'working_days'   => $workingDays,
+                    'leave_balance'  => $annualBalance,
+                ];
+
+                foreach ($leaveTypes as $lt) {
+                    $row['lt_' . $lt->id] = $leaveCounts[$lt->id];
+                }
+
+                return $row;
+            })->sortBy('name')->values();
+
+            return response()->json([
+                'report'      => $rows,
+                'leave_types' => $leaveTypes->map(fn($lt) => ['id' => $lt->id, 'name' => $lt->name]),
+                'month_label' => Carbon::create($year, $month)->format('F Y'),
+                'working_days_in_month' => $rows->first()['working_days'] ?? 0,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Monthly summary report failed: ' . $e->getMessage());
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
