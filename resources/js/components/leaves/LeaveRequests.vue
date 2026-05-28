@@ -28,7 +28,7 @@
                 </v-col>
                 <v-col cols="12">
                   <v-select v-model="filterOptions.statuses" :items="statusOptions" placeholder="Select Status"
-                    label="Status" variant="outlined" clearable item-value="id" item-title="name" multiple>
+                    label="Status" variant="outlined" clearable multiple>
                   </v-select>
                 </v-col>
                 <v-col cols="12">
@@ -615,15 +615,15 @@ export default {
     filterLeaves() {
       this.loading = true;
       const apiUrl = this.base_url + 'api/v1/leaves';
+      const statuses = (this.filterOptions.statuses || []);
       const params = {
-        unit_ids: this.filterOptions.unit_ids,
-        leave_type_ids: this.filterOptions.leave_type_ids,
+        unit_ids:         this.filterOptions.unit_ids,
+        leave_type_ids:   this.filterOptions.leave_type_ids,
         application_date: this.filterOptions.application_date,
-        from: this.filterOptions.start_date,
-        user_ids: this.filterOptions.user_ids,
-        statuses: this.filterOptions.statuses.map(status =>
-          status.toLowerCase().replace(/\s+/g, '_')
-        )
+        from:             this.filterOptions.start_date,
+        user_ids:         this.filterOptions.user_ids,
+        // Only send statuses when explicitly selected; send as-is (no case transform)
+        ...(statuses.length ? { statuses } : {}),
       };
 
       axios.get(apiUrl, { params })

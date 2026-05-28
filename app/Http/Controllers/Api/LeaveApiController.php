@@ -55,7 +55,13 @@ class LeaveApiController extends Controller
 
       $query->whereHas('user', function ($query) use ($hodDepartmentIds) {
         $query->whereIn('department_id', $hodDepartmentIds);
-      })->where('status', 'Hr Approved');
+      });
+
+      // Only restrict to Hr Approved when the caller hasn't provided an explicit status filter
+      $explicitStatuses = $request->input('statuses', []);
+      if (empty($explicitStatuses)) {
+        $query->where('status', 'Hr Approved');
+      }
     }
 
     // Apply filters based on request parameters
